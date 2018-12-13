@@ -146,6 +146,10 @@ def get_raw_data_from_csv (X_arr, Y_arr, filename, drop_yarr = False, skipfirstl
                 
                 # get each items
                 for col in row :
+                    # skip something number here
+                    if (row.index(col) == 0) :
+                        continue
+                    
                     col = col.replace(",", "")
                     # check date
                     if ("년" in col) and ("월" in col) :

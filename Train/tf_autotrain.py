@@ -27,12 +27,12 @@ tf.set_random_seed(2416)
 my_learning_rate = 1e-4
 my_regularization_rate = 0
 training_epochs = 1000
-dataset_size = 8
-testdata_size = 8
+dataset_size = 1332
+testdata_size = 110
 batch_size = 4
 print_interval = 100
 
-input_arraysize = 6
+input_arraysize = 28
 output_arraysize = 1
 
 #direct Bridge
@@ -173,7 +173,7 @@ else :
 # collect input data
 Xarr = list()
 Yarr = list()
-Xarr, Yarr = get_raw_data_from_csv(Xarr, Yarr, "America_NASDAQ.csv", drop_yarr = False, skipfirstline = True)
+Xarr, Yarr = get_raw_data_from_csv(Xarr, Yarr, "input.txt", drop_yarr = False, skipfirstline = True)
 
 # batch
 X_batches, Y_batches = tf.train.batch([Xarr, Yarr], batch_size=batch_size, enqueue_many=True)
