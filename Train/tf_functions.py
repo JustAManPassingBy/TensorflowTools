@@ -90,26 +90,15 @@ def get_data_with_float32(num_of_data_set, X_filename, X_size, Y_filename, Y_siz
     return X_arr, Y_arr
 # End of function
 
-# Function print diff
-# Get two parameters, And print Each information in same line
-# X, Y : Array
-# start_index, offset_index : print all start_index + (offset_index * i) if this value is less than array size
-def print_data(X, Y, each_item_size, start_index, offset_index) :
-    total_index = min(len(X), len(Y))
+# Function print 
+def print_data(X, filename) :
+    with open(filename, "w", encoding="utf-8", newline= '') as csvDataFile:
+        writer = csv.writer(csvDataFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
 
-    if (start_index >= total_index) or (offset_index < 1) :
-        print("Print data :: Value error")
-        return
+        for item in X :
+            writer.writerow(item)
 
-    for i in range (start_index, total_index, offset_index) :
-        print(" Test : ", i)
-        
-        for j in range (0, each_item_size) :
-            
-            print(round(X[i][j], 2), " => ", round(Y[i][j], 2))
-            
-        print("-------------------------------------------")
-
+    csvDataFile.close()
 
 # clipping data with range between -100 ~ 100
 def clipping_all_data(data_arr) :
@@ -145,7 +134,7 @@ def clipping_all_data(data_arr) :
 # in train data, you have to write X_arr, Y_arr
 # in test data, you have to skip Y_arr
 # in csv, We assume first law is name of array
-def get_raw_data_from_csv (X_arr, filename, Y_arr = False, skipfirstline = True) :
+def get_raw_data_from_csv (X_arr, Y_arr, filename, drop_yarr = False, skipfirstline = True) :
     with open(filename, encoding="utf-8") as csvDataFile:
         csv_reader = csv.reader(csvDataFile)
         for row in csv_reader :
@@ -161,6 +150,8 @@ def get_raw_data_from_csv (X_arr, filename, Y_arr = False, skipfirstline = True)
                     # check date
                     if ("년" in col) and ("월" in col) :
                         col_item = datetime.datetime.strptime(col, "%Y년 %m월 %d일")
+                    elif (col == "") :
+                        col_item = float(0)
                     elif (col[-1].isdigit()) is False :
                         col_item = float(col[:-1])
                     else :
@@ -170,9 +161,16 @@ def get_raw_data_from_csv (X_arr, filename, Y_arr = False, skipfirstline = True)
 
                 # if Y_arr is exist
                 # put last item onto Y array
-                if (Y_arr is not False) :
-                    Y_arr.append(row_items[-1])
+                if (drop_yarr is False) :
+                    tem_arr = list()
+                    tem_arr.append(row_items[-1])
+                    Y_arr.append(tem_arr)
+                    
                     row_items.pop()
+                else :
+                    tem_arr = list()
+                    tem_arr.append(float(1.0))
+                    Y_arr.append(tem_arr)
 
                 # add X_arr
                 X_arr.append(row_items)
