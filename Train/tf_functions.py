@@ -1,4 +1,6 @@
 import math
+import csv
+import datetime
 
 # Function Cost predictor
 # new_input   : input function
@@ -109,4 +111,73 @@ def print_data(X, Y, each_item_size, start_index, offset_index) :
         print("-------------------------------------------")
 
 
+# clipping data with range between -100 ~ 100
+def clipping_all_data(data_arr) :
+    num_row = len(data_arr)
+    num_col = len(data_arr[0])
+
+    divider = list()
+
+    adjustdate = datetime.datetime.strptime("2018년 09월 01일", "%Y년 %m월 %d일")
+
+    for col in range(0, num_col) :
+        if isinstance(data_arr[0][col], datetime.date) is True :
+            for row in range(0, num_row) :
+                datediff = data_arr[row][col] - adjustdate
+                data_arr[row][col] = float(datediff.days)
+        else :
+            cur_max = 1.0
         
+            for row in range(0, num_row) :
+                if data_arr[row][col] is 0 :
+                    continue
+                if abs(data_arr[row][col]) > cur_max :
+                    cur_max = abs(data_arr[row][col])
+
+            multipler = (100.0 / float(cur_max))
+
+            for row in range(0, num_row) :
+                data_arr[row][col] *= multipler
+
+    return data_arr
+
+# Get data from csv32
+# in train data, you have to write X_arr, Y_arr
+# in test data, you have to skip Y_arr
+# in csv, We assume first law is name of array
+def get_raw_data_from_csv (X_arr, filename, Y_arr = False, skipfirstline = True) :
+    with open(filename, encoding="utf-8") as csvDataFile:
+        csv_reader = csv.reader(csvDataFile)
+        for row in csv_reader :
+            # skip first line
+            if (skipfirstline) is True :
+                skipfirstline = False
+            else :
+                row_items = list()
+                
+                # get each items
+                for col in row :
+                    col = col.replace(",", "")
+                    # check date
+                    if ("년" in col) and ("월" in col) :
+                        col_item = datetime.datetime.strptime(col, "%Y년 %m월 %d일")
+                    elif (col[-1].isdigit()) is False :
+                        col_item = float(col[:-1])
+                    else :
+                        col_item = float(col)
+                    
+                    row_items.append(col_item)
+
+                # if Y_arr is exist
+                # put last item onto Y array
+                if (Y_arr is not False) :
+                    Y_arr.append(row_items[-1])
+                    row_items.pop()
+
+                # add X_arr
+                X_arr.append(row_items)
+    
+    # clipping data (only X array)
+    X_arr = clipping_all_data(X_arr)
+
+    return X_arr, Y_arr

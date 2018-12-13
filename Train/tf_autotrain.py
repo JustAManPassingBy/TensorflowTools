@@ -3,8 +3,9 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 import math
+import datetime
 
-from tf_functions import cost_predictor, get_data_with_float32, print_data
+from tf_functions import cost_predictor, get_data_with_float32, print_data, get_raw_data_from_csv
 
 # Collect mnist data
 #from tensorflow.examples.tutorials.mnist import input_data
@@ -47,8 +48,8 @@ layer_size=[input_arraysize, 29, 256, 256, 256, 256, output_arraysize]
 # set "NULL" if don't have it
 # Example : savepath="/tmp/model.ckpt"
 # Example : savepath="NULL"
-savepath="/tmp/3model.ckpt"
-restorepath="/tmp/3model.ckpt"
+savepath="NULL"
+restorepath="NULL"
 
 # dropout ratio
 dropout_ratio = 0.6
@@ -106,7 +107,7 @@ for i in range(0, total_layer - 1) :
         # Set Weight, Bias for direct bridge
         W = tf.eye(layer_size[i], name=('W0'))
 
-        B = tf.constant(0.5, shape=[layer_size[i + 1]])
+        B = tf.constant(0.1, shape=[layer_size[i + 1]])
 
     # Layer Result
     # case of input node
@@ -180,7 +181,14 @@ else :
 # collect input data
 Xarr = list()
 Yarr = list()
-Xarr, Yarr = get_data_with_float32(dataset_size, "input.txt", input_arraysize, "output.txt", output_arraysize, Xarr, Yarr)
+X_arr, Y_arr = get_raw_data_from_csv(Xarr, "America_NASDAQ.csv", Y_arr = Yarr, skipfirstline = True)
+print (Xarr)
+print (Yarr)
+
+
+#newXarr = list()
+#X_arr, _ = get_raw_data_from_csv(newXarr, "America_NASDAQ.csv", Y_arr = False, skipfirstline = True)
+#print (Xarr)
 
 cost_min = float(4294967296)
 
