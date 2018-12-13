@@ -27,12 +27,12 @@ tf.set_random_seed(2416)
 my_learning_rate = 1e-4
 my_regularization_rate = 0
 training_epochs = 1000
-dataset_size = 1332
-testdata_size = 110
+dataset_size = 8
+testdata_size = 8
 batch_size = 4
 print_interval = 100
 
-input_arraysize = 28
+input_arraysize = 5
 output_arraysize = 1
 
 #direct Bridge
@@ -80,6 +80,9 @@ total_batch = int(dataset_size / batch_size)
 
 list_for_auto_control = list()
 
+# get session
+sess = tf.InteractiveSession()
+
 # Set input, output placeholder
 # [NONE , 784] means  in 784 variables for one dimension can be of any size(dimensions)
 X = tf.placeholder(tf.float32, [None, layer_size[0]])
@@ -99,9 +102,13 @@ for i in range(0, total_layer - 1) :
         B = tf.Variable(tf.random_normal([layer_size[i + 1]]), name=('B'+str(i)))
     else :
         # Set Weight, Bias for direct bridge
-        W = tf.eye(layer_size[i], name=('W0'))
+        W = tf.Variable(tf.convert_to_tensor(np.eye(layer_size[i]), dtype=tf.float32), name='W0')
 
-        #B = tf.constant(0.1, shape=[layer_size[i + 1]])
+        # get print
+        W = tf.Print(W, [W], message="print")
+        PRINTW = tf.add(W, W)
+
+        B = tf.constant(float(0), shape=[layer_size[i + 1]])
 
 
     # Layer Result
@@ -112,7 +119,7 @@ for i in range(0, total_layer - 1) :
             L = tf.nn.relu(tf.matmul(X, W) + B)
             L = tf.nn.dropout(L, keep_prob=dropout_ratio)
         else :
-            L = tf.nn.relu(tf.matmul(X, W))   
+            L = tf.nn.relu(tf.matmul(X, W) + B)   
     # case of hidden nodes
     elif (i != total_layer - 2) :
         L = tf.nn.relu(tf.matmul(PREVL, W) + B)
@@ -144,9 +151,6 @@ optimizer = tf.train.GradientDescentOptimizer(learning_rate=my_learning_rate).mi
 # saver
 saver = tf.train.Saver()
 
-# get session
-sess = tf.InteractiveSession()
-
 # if restore path exist
 if restorepath == "NULL" :
     sess.run(tf.global_variables_initializer())
@@ -173,7 +177,7 @@ else :
 # collect input data
 Xarr = list()
 Yarr = list()
-Xarr, Yarr = get_raw_data_from_csv(Xarr, Yarr, "input.txt", drop_yarr = False, skipfirstline = True)
+Xarr, Yarr = get_raw_data_from_csv(Xarr, Yarr, "America_NASDAQ.csv", drop_yarr = False, skipfirstline = True)
 
 # batch
 X_batches, Y_batches = tf.train.batch([Xarr, Yarr], batch_size=batch_size, enqueue_many=True)
@@ -219,6 +223,8 @@ Ytest = list()
 Xtest, Ytest = get_raw_data_from_csv(Xtest, Ytest, "America_NASDAQ.csv", drop_yarr = True, skipfirstline = True)
 
 predict_val, _ = sess.run([hypothesis, Y], feed_dict={X : Xtest, Y : Ytest, keep_prob: 1})
+
+print(PRINTW.eval())
 
 print_data(predict_val, "test.csv")
 

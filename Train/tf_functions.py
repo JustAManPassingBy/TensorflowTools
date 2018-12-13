@@ -176,6 +176,7 @@ def get_raw_data_from_csv (X_arr, Y_arr, filename, drop_yarr = False, skipfirstl
                     tem_arr.append(float(1.0))
                     Y_arr.append(tem_arr)
 
+
                 # add X_arr
                 X_arr.append(row_items)
     
