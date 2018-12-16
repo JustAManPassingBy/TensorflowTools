@@ -5,20 +5,19 @@ import matplotlib.pyplot as plt
 import math
 import datetime
 
-from tf_functions import cost_predictor, get_data_with_float32, print_data, get_raw_data_from_csv
+from tf_functions import cost_predictor, get_data_with_float32, print_data, get_raw_data_from_csv, get_raw_data_from_tsv, print_result, print_cost
 
+''' For Mnist Data '''
 # Collect mnist data
 #from tensorflow.examples.tutorials.mnist import input_data
 #mnist = input_data.read_data_sets("MNIST_data", one_hot=True)
 
-## todo standardization (data standard)
-## overfitting : Regularization
 
 ## print(Array.ndim) == print rank
 ## print(Array.shape) == print shape
 
 
-######################################################
+''' User Input '''
 ######## NEEDS TO CONSIDER VARIABLES
 # set random seed
 tf.set_random_seed(2416)
@@ -26,39 +25,55 @@ tf.set_random_seed(2416)
 # parameter
 my_learning_rate = 1e-4
 my_regularization_rate = 0
-training_epochs = 1000
-dataset_size = 8
-testdata_size = 8
-batch_size = 4
+training_epochs = 400000
+dataset_size = 1517
+testdata_size = 121
+batch_size = 100
 print_interval = 100
+graph_interval = 5
 
-input_arraysize = 5
-output_arraysize = 1
-
-#direct Bridge
-direct_bridge = True
-
-# Layer  input , layer '1' , layer '2'  ...  layer 'k' , output
-# layer size must not less than 2 (input / output)
-layer_size=[input_arraysize, input_arraysize, 16, output_arraysize]
-
-# s323ave & restore variables
-# set "NULL" if don't have it
-# Example : savepath="/tmp/model.ckpt"
-# Example : savepath="NULL"
-savepath="NULL"
-restorepath="NULL"
+# input / output size
+input_arraysize = 29
+output_arraysize = 2
 
 # dropout ratio
 dropout_ratio = 0.6
 
 # collecting cost list size
 cost_list_size = 50
-
 goal_descend_relation = int(cost_list_size / 2)
+
+# snapshot min cost (not need in dropout)
+snapshotmincost = False
+
+# printgraph
+printgraph = True
+
+# show costs
+showcost = True
+showcost_filename = "showcost.txt"
+
+''' Layers '''
+#direct Bridge
+direct_bridge = False
+
+# Layer  input , layer '1' , layer '2'  ...  layer 'k' , output
+if (direct_bridge is True) :
+    layer_size=[input_arraysize, input_arraysize, 64, 256, 256, 64, 4, output_arraysize]
+else :
+    layer_size=[input_arraysize, 64, 256, 256, 64, 8, output_arraysize]
+
+''' save & restore variables '''
+# set "NULL" if don't have it
+# Example : savepath='/tmp/model.ckpt' savepate='NULL'
+# window " , linux '
+savepath="/tmp/model.ckpt"
+restorepath="/tmp/model.ckpt"
+snapshotmincostpath="/tmp/minmodel.ckpt"
 
 ######## END OF CONSIDER VARIABLES
 ######################################################
+''' Check Validity '''
 # check direct bridge
 if (direct_bridge is True) and (input_arraysize != layer_size[1]) :
     print("Error : In direct bridge, first hidden layer size is same with input layer")
@@ -84,77 +99,101 @@ list_for_auto_control = list()
 sess = tf.InteractiveSession()
 
 # Set input, output placeholder
-# [NONE , 784] means  in 784 variables for one dimension can be of any size(dimensions)
 X = tf.placeholder(tf.float32, [None, layer_size[0]])
 Y = tf.placeholder(tf.float32, [None, layer_size[total_layer - 1]])
 
-### Input
+''' Make & Get array for train data '''
+# collect input data
+Xarr = list()
+Yarr = list()
+#Xarr, Yarr = get_raw_data_from_csv(Xarr, Yarr, "America_NASDAQ.csv", drop_yarr = False, skipfirstline = True)
+Xarr, Yarr = get_raw_data_from_tsv(Xarr, Yarr, "train.txt", Y_size = 2, drop_yarr = False, skipfirstline = False)
+
+# From Input data, create Batch(Slice of train data)
+# Todo make random
+X_batches, Y_batches = tf.train.batch([Xarr, Yarr], batch_size=batch_size, enqueue_many=True)
+
+''' Setting Layer '''
 ### First layer - layer 1 ~ layer k - 1 - layer k
-# get variable : get initialize node values with xavier initializer (size is [layer size[i] , layer size[i + 1])
-# varaible     : get constant variable
-# relu         : Declining function (x > 0 ? x : 0.01x)
-# dropout      : Probability that specific node is dropped in learning (Re_estimate for every study)
+# get variable  : get initialize node values with xavier initializer (size is [layer size[i] , layer size[i + 1])
+# varaible      : get constant variable
+# relu function : Declining function (x > 0 ? x : 0.01x)
+# dropout       : Probability that specific node is dropped in learning (Re_estimate for every study)
 for i in range(0, total_layer - 1) :
+    ## Weight / Bias
     if (direct_bridge is False) or (i != 0) :
-        # Set Weight , Bias
         W = tf.get_variable(('W'+str(i)), shape=[layer_size[i], layer_size[i + 1]],
                            initializer=tf.contrib.layers.xavier_initializer())
         B = tf.Variable(tf.random_normal([layer_size[i + 1]]), name=('B'+str(i)))
     else :
-        # Set Weight, Bias for direct bridge
         W = tf.Variable(tf.convert_to_tensor(np.eye(layer_size[i]), dtype=tf.float32), name='W0')
 
-        # get print
+        # Get result for Direct Bridge
+        # Todo : synchronize with liunx...
         W = tf.Print(W, [W], message="print")
         PRINTW = tf.add(W, W)
 
         B = tf.constant(float(0), shape=[layer_size[i + 1]])
 
-
-    # Layer Result
-    # case of input node
-    # Todo : how can i get save value in tf.nn
+    ## Layer Result
+    # First layer : Get input
     if (i == 0) :
         if (direct_bridge is False) :
-            L = tf.nn.relu(tf.matmul(X, W) + B)
+            L = tf.matmul(X, W) + B
+            #L = tf.nn.relu(tf.matmul(X, W) + B)
             L = tf.nn.dropout(L, keep_prob=dropout_ratio)
         else :
-            L = tf.nn.relu(tf.matmul(X, W) + B)   
-    # case of hidden nodes
+            L = tf.nn.relu(tf.matmul(X, W) + B)
+            L = tf.matmul(X, W) + B
+    # Else : Get previous hidden
     elif (i != total_layer - 2) :
-        L = tf.nn.relu(tf.matmul(PREVL, W) + B)
-
+        #L = tf.nn.relu(tf.matmul(PREVL, W) + B)
+        L = tf.matmul(PREVL, W) + B
         L = tf.nn.dropout(L, keep_prob=dropout_ratio)
 
     PREVL = L
 
+''' Your hypothesis (X => Layer => Hypothesis) '''
 # set hypothesis
 # hypothesis [0.9 0.1 0.0 0.0 ...] // O.9 might be an answer
-#hypothesis = tf.matmul(L, W) + B
-hypothesis = tf.sigmoid(tf.matmul(L, W) + B)
+hypothesis = tf.matmul(L, W) + B
+#hypothesis = tf.nn.relu(tf.matmul(L, W) + B)
+#hypothesis = tf.sigmoid(tf.matmul(L, W) + B)
 
+''' cost : For adjust learning flow '''
 # Cost is difference between label & hypothesis(Use softmax for maximize difference
 # [0.9 0.1 0.0 0.0 ...] ===(softmax)==> [1 0 0 0 ...] (Soft max is empthsize special answer)
 # Square = {for all X in [X], init M = 0 , M += (WX - Y)^2 , finally M /= sizeof([X]) 
 # label is true difference
 # reduce mean is average of all matrix's elements
+#cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=hypothesis, labels=Y)) 
 cost = tf.reduce_mean(tf.square(hypothesis - Y))
 
+
+''' Regularization (If want) '''
 # reqularization
 l2reg = my_regularization_rate * tf.reduce_mean(tf.square(W))
 
+''' Optimizer (Calculate Gradient) '''
 # define optimzer : To minimize cost / with learning rate / Use adam optimizer
 # https://smist08.wordpress.com/tag/adam-optimizer/ For find more optimizer
 #optimizer = tf.train.AdamOptimizer(learning_rate=my_learning_rate).minimize(cost - l2reg)
 optimizer = tf.train.GradientDescentOptimizer(learning_rate=my_learning_rate).minimize(cost - l2reg)
 
+''' Restore Process '''
 # saver
 saver = tf.train.Saver()
 
-# if restore path exist
+''' Graph information'''
+if (printgraph is True) :
+    Xgraph = list()
+    Ygraph = list()
+
+# Initialize variables if restore path is null
 if restorepath == "NULL" :
     sess.run(tf.global_variables_initializer())
     print("Initialize variables")
+# Restore
 else :
     try :
         saver.restore(sess, restorepath)
@@ -174,19 +213,14 @@ else :
     else :
         print ("restore done")
 
-# collect input data
-Xarr = list()
-Yarr = list()
-Xarr, Yarr = get_raw_data_from_csv(Xarr, Yarr, "America_NASDAQ.csv", drop_yarr = False, skipfirstline = True)
-
-# batch
-X_batches, Y_batches = tf.train.batch([Xarr, Yarr], batch_size=batch_size, enqueue_many=True)
-
+''' Setting for Tensorflow '''
 # coordinate
 coord = tf.train.Coordinator()
 threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
-# Train model
+min_cost = float(4294967296)
+
+''' Train Model '''
 for epoch in range(training_epochs):
     avg_cost = 0
 
@@ -198,33 +232,69 @@ for epoch in range(training_epochs):
         c, _ = sess.run([cost, optimizer], feed_dict=feed_dict)
         avg_cost += c / total_batch
 
+    if (avg_cost < min_cost) :
+        min_cost = avg_cost
+
+        if (snapshotmincost is True) and (snapshotmincostpath != "NULL") :
+            saver.save(sess, snapshotmincostpath)
+
     if (epoch % print_interval) == 0 :
-        print('Epoch' , '{:6d}'.format(epoch), 'done. Cost :', '{:.9f}'.format(avg_cost))
+        print('Epoch' , '{:7d}'.format(epoch), 'done. Cost :', '{:.9f}'.format(avg_cost))
         #tf.Print(hypothesis, [hypothesis])
 
         if savepath != "NULL" :
             saver.save(sess, savepath)
-    
+
+    if (printgraph is True) and (epoch % graph_interval) == 0 :
+        Xgraph.append(epoch)
+        Ygraph.append(avg_cost)
+
 coord.request_stop()
 coord.join(threads)
 
 print("Learning Done")
 
-# if save path exist
+''' Save if savepath exits '''
 if savepath != "NULL" :
     saver.save(sess, savepath)
     print("save done")
 
 
-# get test value
+''' Get test value '''
 Xtest = list()
 Ytest = list()
 
-Xtest, Ytest = get_raw_data_from_csv(Xtest, Ytest, "America_NASDAQ.csv", drop_yarr = True, skipfirstline = True)
+# Ytest values are filled with dummy data (float(1.0)) 
+#Xtest, Ytest = get_raw_data_from_csv(Xtest, Ytest, "America_NASDAQ.csv", drop_yarr = True, skipfirstline = True)
+Xtest, Ytest = get_raw_data_from_tsv(Xtest, Ytest, "test.txt", Y_size = 2, drop_yarr = False, skipfirstline = False)
 
-predict_val, _ = sess.run([hypothesis, Y], feed_dict={X : Xtest, Y : Ytest, keep_prob: 1})
+''' Test values '''
+correct_prediction = tf.equal(tf.argmax(hypothesis, 1), tf.argmax(Y, 1))
+#correct_prediction = tf.equal(hypothesis, Y)
+#correct_prediction = tf.square(hypothesis -  Y)
 
-print(PRINTW.eval())
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+#accuracy = tf.reduce_mean(correct_prediction)
 
-print_data(predict_val, "test.csv")
+''' Check result '''
+# sess.run([Output formats(hypothesis, Y)], feed_dictionary(see below)
+print_accuracy, predict_val, _ = sess.run([accuracy, hypothesis, Y], feed_dict={X : Xtest, Y : Ytest, keep_prob: 1})
 
+''' Print result '''
+# Todo : Synchronize with output
+#print(PRINTW.eval())
+
+''' Create output '''
+print("Min value : " + str(min_cost) + " (Save : " + str(snapshotmincost) + ")")
+#print("Accuracy  : " + str(print_accuracy * 100.0) + "%")
+print("Accuracy  : " + str(print_accuracy))
+print_result(predict_val, Ytest)
+#print_data(predict_val, "test.csv")
+
+''' Print Graph (Should be last) '''
+if (printgraph is True) :
+    plt.plot(Xgraph, Ygraph)
+    plt.show()
+
+if (showcost is True) :
+    print_cost(Xgraph, Ygraph, showcost_filename) 

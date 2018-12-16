@@ -90,7 +90,22 @@ def get_data_with_float32(num_of_data_set, X_filename, X_size, Y_filename, Y_siz
     return X_arr, Y_arr
 # End of function
 
-# Function print 
+def print_cost(epoch_array, cost_array, filename) :
+    showcostfile = open(filename, "w")
+
+    for cnt in range (0, len(epoch_array)) :
+        showcostfile.write('Epoch')
+        showcostfile.write('{:7d}'.format(epoch_array[cnt]))
+        showcostfile.write('done\tCost : ')
+        showcostfile.write('{:.9f}'.format(cost_array[cnt]))
+        showcostfile.write("\n")
+    showcostfile.close()
+
+    return
+
+# Function print
+# X        : Array that want to make for output file
+# Filename : Output filename
 def print_data(X, filename) :
     with open(filename, "w", encoding="utf-8", newline= '') as csvDataFile:
         writer = csv.writer(csvDataFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
@@ -100,41 +115,65 @@ def print_data(X, filename) :
 
     csvDataFile.close()
 
-# clipping data with range between -100 ~ 100
+def print_result(X, Y) :
+    row = max(len(X), len(Y))
+    col_X = len(X[0])
+    col_Y = len(Y[0])
+
+    for cur_row in range(0, row) :
+        print("Expect : ", end ='')
+
+        for (cur_col) in range(0, col_X) :
+            print(X[cur_row][cur_col], end ='')
+            print(", ", end ='')
+
+        print(" ==> Real: ", end ='')
+        for (cur_col) in range(0, col_Y) :
+            print(Y[cur_row][cur_col], end ='')
+            print(", ", end ='')
+
+        print("")
+
+        
+
+# clipping data with range between 0 ~ 1)
 def clipping_all_data(data_arr) :
     num_row = len(data_arr)
     num_col = len(data_arr[0])
 
     divider = list()
 
-    adjustdate = datetime.datetime.strptime("2018년 09월 01일", "%Y년 %m월 %d일")
-
     for col in range(0, num_col) :
-        if isinstance(data_arr[0][col], datetime.date) is True :
-            for row in range(0, num_row) :
-                datediff = data_arr[row][col] - adjustdate
-                data_arr[row][col] = float(datediff.days)
-        else :
-            cur_max = 1.0
+        #cur_max = -2000000000
+        #cur_min = 2000000000
+        cur_max_abs = 0 
         
-            for row in range(0, num_row) :
-                if data_arr[row][col] is 0 :
-                    continue
-                if abs(data_arr[row][col]) > cur_max :
-                    cur_max = abs(data_arr[row][col])
+        for row in range(0, num_row) :
+            #if (data_arr[row][col] > cur_max) :
+            #    cur_max = data_arr[row][col]
+            #if (data_arr[row][col] < cur_min) :
+            #    cur_min = data_arr[row][col]
+            if (cur_max_abs < abs(data_arr[row][col])) :
+                cur_max_abs = abs(data_arr[row][col])
+                    
+        #multipler = (1.0 / float(cur_max - cur_min))
+        multipler = (10.0 / float(cur_max_abs))
 
-            multipler = (100.0 / float(cur_max))
+        for row in range(0, num_row) :
+            #data_arr[row][col] -= cur_min
+            data_arr[row][col] *= multipler
 
-            for row in range(0, num_row) :
-                data_arr[row][col] *= multipler
+    print("cliping data with row x col :: " + str(num_row) + " x " + str(num_col)) 
 
     return data_arr
 
-# Get data from csv32
+# Get data from csv
 # in train data, you have to write X_arr, Y_arr
 # in test data, you have to skip Y_arr
 # in csv, We assume first law is name of array
 def get_raw_data_from_csv (X_arr, Y_arr, filename, drop_yarr = False, skipfirstline = True) :
+    adjustdate = datetime.datetime.strptime("2018년 09월 01일", "%Y년 %m월 %d일")
+    
     with open(filename, encoding="utf-8") as csvDataFile:
         csv_reader = csv.reader(csvDataFile)
         for row in csv_reader :
@@ -143,19 +182,27 @@ def get_raw_data_from_csv (X_arr, Y_arr, filename, drop_yarr = False, skipfirstl
                 skipfirstline = False
             else :
                 row_items = list()
+
+                data_count = 0
                 
                 # get each items
                 for col in row :
+                    data_count += 1
+                    
                     # skip something number here
-                    if (row.index(col) == 0) :
+                    if (data_count <= 2) :
                         continue
                     
                     col = col.replace(",", "")
                     # check date
-                    if ("년" in col) and ("월" in col) :
-                        col_item = datetime.datetime.strptime(col, "%Y년 %m월 %d일")
+                    if ("-" in col) and (":" in col) :
+                        tem_date = datetime.datetime.strptime(col, "%Y-%m-%d %h:%m:%s")
+                        col_date = tem_date - adjustdate
+                        col_item = float(col_date.day)
+                    # check empty
                     elif (col == "") :
                         col_item = float(0)
+                    # skip last item
                     elif (col[-1].isdigit()) is False :
                         col_item = float(col[:-1])
                     else :
@@ -171,6 +218,75 @@ def get_raw_data_from_csv (X_arr, Y_arr, filename, drop_yarr = False, skipfirstl
                     Y_arr.append(tem_arr)
                     
                     row_items.pop()
+                else :
+                    tem_arr = list()
+                    tem_arr.append(float(1.0))
+                    Y_arr.append(tem_arr)
+
+
+                # add X_arr
+                X_arr.append(row_items)
+    
+    # clipping data (only X array)
+    X_arr = clipping_all_data(X_arr)
+
+    return X_arr, Y_arr
+
+# Get data from tsv
+# in train data, you have to write X_arr, Y_arr
+# in test data, you have to skip Y_arr
+# in csv, We assume first law is name of array
+def get_raw_data_from_tsv (X_arr, Y_arr, filename, Y_size = 1, drop_yarr = False, skipfirstline = True) :
+    with open(filename, encoding="utf-8") as csvDataFile :
+        tsv_reader = csv.reader(csvDataFile, delimiter='\t')
+        
+        for row in tsv_reader :
+            # skip first line
+            if (skipfirstline) is True :
+                skipfirstline = False
+            else :
+                row_items = list()
+
+                data_count = 0
+                
+                # get each items
+                for col in row :
+                    data_count += 1
+                    
+                    # skip something number here
+                    if (data_count <= 0) :
+                        continue
+                    
+                    col = col.replace(",", "")
+                    # check date
+                    if ("-" in col) and (":" in col) :
+                        tem_date = datetime.datetime.strptime(col, "%Y-%m-%d %h:%m:%s")
+                        col_date = tem_date - adjustdate
+                        col_item = float(col_date.day)
+                    # check empty
+                    elif (col == "") :
+                        col_item = float(0)
+                    # skip last item
+                    elif (col[-1].isdigit()) is False :
+                        col_item = float(col[:-1])
+                    else :
+                        col_item = float(col)
+                    
+                    row_items.append(col_item)
+
+                # pop last tab
+                row_items.pop()
+            
+                # if Y_arr is exist
+                # put last item onto Y array
+                if (drop_yarr is False) :
+                    tem_arr = list()
+                    
+                    for repeat in range (0, Y_size) :
+                        tem_arr.append(row_items[-1])
+                        row_items.pop()
+
+                    Y_arr.append(tem_arr)    
                 else :
                     tem_arr = list()
                     tem_arr.append(float(1.0))
