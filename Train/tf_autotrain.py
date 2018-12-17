@@ -23,9 +23,9 @@ from tf_functions import cost_predictor, get_data_with_float32, print_data, get_
 tf.set_random_seed(2416)
 
 # parameter
-my_learning_rate = 1e-4
+my_learning_rate = 1e-6
 my_regularization_rate = 0
-training_epochs = 400000
+training_epochs = 500000
 dataset_size = 1517
 testdata_size = 121
 batch_size = 100
@@ -61,7 +61,7 @@ direct_bridge = False
 if (direct_bridge is True) :
     layer_size=[input_arraysize, input_arraysize, 64, 256, 256, 64, 4, output_arraysize]
 else :
-    layer_size=[input_arraysize, 64, 256, 256, 64, 8, output_arraysize]
+    layer_size=[input_arraysize, 64, 256, 256, 64, 12, output_arraysize]
 
 ''' save & restore variables '''
 # set "NULL" if don't have it
@@ -81,7 +81,7 @@ if (direct_bridge is True) and (input_arraysize != layer_size[1]) :
     exit
  
 # dropout probability variable
-keep_prob = tf.placeholder(tf.float32)
+keep_prob = tf.placeholder(tf.float64)
 
 # automatical parts
 total_layer= len(layer_size)
@@ -99,8 +99,8 @@ list_for_auto_control = list()
 sess = tf.InteractiveSession()
 
 # Set input, output placeholder
-X = tf.placeholder(tf.float32, [None, layer_size[0]])
-Y = tf.placeholder(tf.float32, [None, layer_size[total_layer - 1]])
+X = tf.placeholder(tf.float64, [None, layer_size[0]])
+Y = tf.placeholder(tf.float64, [None, layer_size[total_layer - 1]])
 
 ''' Make & Get array for train data '''
 # collect input data
@@ -123,10 +123,10 @@ for i in range(0, total_layer - 1) :
     ## Weight / Bias
     if (direct_bridge is False) or (i != 0) :
         W = tf.get_variable(('W'+str(i)), shape=[layer_size[i], layer_size[i + 1]],
-                           initializer=tf.contrib.layers.xavier_initializer())
-        B = tf.Variable(tf.random_normal([layer_size[i + 1]]), name=('B'+str(i)))
+                           initializer=tf.contrib.layers.xavier_initializer(), dtype=tf.float64)
+        B = tf.Variable(tf.random_normal([layer_size[i + 1]], dtype=tf.float64), name=('B'+str(i)))
     else :
-        W = tf.Variable(tf.convert_to_tensor(np.eye(layer_size[i]), dtype=tf.float32), name='W0')
+        W = tf.Variable(tf.convert_to_tensor(np.eye(layer_size[i]), dtype=tf.float64), name='W0')
 
         # Get result for Direct Bridge
         # Todo : synchronize with liunx...
@@ -273,7 +273,7 @@ correct_prediction = tf.equal(tf.argmax(hypothesis, 1), tf.argmax(Y, 1))
 #correct_prediction = tf.equal(hypothesis, Y)
 #correct_prediction = tf.square(hypothesis -  Y)
 
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float64))
 #accuracy = tf.reduce_mean(correct_prediction)
 
 ''' Check result '''
