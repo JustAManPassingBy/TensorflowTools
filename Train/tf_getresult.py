@@ -7,15 +7,6 @@ import datetime
 
 from tf_functions import cost_predictor, get_data_with_float32, print_data, get_raw_data_from_csv, get_raw_data_from_tsv, print_result, print_cost
 
-''' For Mnist Data '''
-# Collect mnist data
-#from tensorflow.examples.tutorials.mnist import input_data
-#mnist = input_data.read_data_sets("MNIST_data", one_hot=True)
-
-
-## print(Array.ndim) == print rank
-## print(Array.shape) == print shape
-
 
 ''' User Input '''
 ######## NEEDS TO CONSIDER VARIABLES
@@ -23,35 +14,12 @@ from tf_functions import cost_predictor, get_data_with_float32, print_data, get_
 tf.set_random_seed(2416)
 
 # parameter
-my_learning_rate = 1e-3
-my_regularization_rate = 0
-training_epochs = 500000
-dataset_size = 1515
 testdata_size = 121
-batch_size = 100
-print_interval = 100
-graph_interval = 5
 
 # input / output size
 input_arraysize = 29
 output_arraysize = 2
 
-# dropout ratio
-dropout_ratio = 1.0
-
-# collecting cost list size
-cost_list_size = 50
-goal_descend_relation = int(cost_list_size / 2)
-
-# snapshot min cost (not need in dropout)
-snapshotmincost = False
-
-# printgraph
-printgraph = True
-
-# show costs
-showcost = True
-showcost_filename = "showcost.txt"
 
 ''' Layers '''
 #direct Bridge
@@ -91,9 +59,6 @@ if total_layer <= 1 :
     print(total_layer + "Your layer is too small XD")
     exit
 
-#total_batch = int(mnist.train.num_examples / batch_size)
-total_batch = int(dataset_size / batch_size)
-
 list_for_auto_control = list()
 
 # get session
@@ -102,17 +67,6 @@ sess = tf.InteractiveSession()
 # Set input, output placeholder
 X = tf.placeholder(tf.float64, [None, layer_size[0]])
 Y = tf.placeholder(tf.float64, [None, layer_size[total_layer - 1]])
-
-''' Make & Get array for train data '''
-# collect input data
-Xarr = list()
-Yarr = list()
-#Xarr, Yarr = get_raw_data_from_csv(Xarr, Yarr, "America_NASDAQ.csv", drop_yarr = False, skipfirstline = True)
-Xarr, Yarr = get_raw_data_from_tsv(Xarr, Yarr, "train.txt", X_size = dataset_size, Y_size = 2, drop_yarr = False, skipfirstline = False)
-
-# From Input data, create Batch(Slice of train data)
-# Todo make random
-X_batches, Y_batches = tf.train.batch([Xarr, Yarr], batch_size=batch_size, enqueue_many=True, allow_smaller_final_batch=True)
 
 ''' Setting Layer '''
 ### First layer - layer 1 ~ layer k - 1 - layer k
@@ -142,7 +96,6 @@ for i in range(0, total_layer - 1) :
         if (direct_bridge is False) :
             L = tf.matmul(X, W) + B
             #L = tf.nn.relu(tf.matmul(X, W) + B)
-            L = tf.nn.dropout(L, keep_prob=dropout_ratio)
         else :
             #L = tf.nn.relu(tf.matmul(X, W) + B)
             L = tf.matmul(X, W) + B
@@ -150,10 +103,9 @@ for i in range(0, total_layer - 1) :
     elif (i != total_layer - 2) :
         #L = tf.nn.relu(tf.matmul(PREVL, W) + B)
         L = tf.matmul(PREVL, W) + B
-        L = tf.nn.dropout(L, keep_prob=dropout_ratio)
 
     PREVL = L
-
+    
 ''' Your hypothesis (X => Layer => Hypothesis) '''
 # set hypothesis
 # hypothesis [0.9 0.1 0.0 0.0 ...] // O.9 might be an answer
@@ -161,35 +113,10 @@ hypothesis = tf.matmul(L, W) + B
 #hypothesis = tf.nn.relu(tf.matmul(L, W) + B)
 #hypothesis= tf.sigmoid(tf.matmul(L, W) + B)
 
-''' cost : For adjust learning flow '''
-# Cost is difference between label & hypothesis(Use softmax for maximize difference
-# [0.9 0.1 0.0 0.0 ...] ===(softmax)==> [1 0 0 0 ...] (Soft max is empthsize special answer)
-# Square = {for all X in [X], init M = 0 , M += (WX - Y)^2 , finally M /= sizeof([X]) 
-# label is true difference
-# reduce mean is average of all matrix's elements
-cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=hypothesis, labels=Y)) 
-#cost = tf.reduce_mean(tf.square(hypothesis - Y))
-
-
-''' Regularization (If want) '''
-# reqularization
-l2reg = my_regularization_rate * tf.reduce_mean(tf.square(W))
-
-''' Optimizer (Calculate Gradient) '''
-# define optimzer : To minimize cost / with learning rate / Use adam optimizer
-# https://smist08.wordpress.com/tag/adam-optimizer/ For find more optimizer
-# http://shuuki4.github.io/deep%20learning/2016/05/20/Gradient-Descent-Algorithm-Overview.html
-optimizer = tf.train.AdamOptimizer(learning_rate=my_learning_rate).minimize((cost - l2reg))
-#optimizer = tf.train.GradientDescentOptimizer(learning_rate=my_learning_rate).minimize(cost - l2reg)
 
 ''' Restore Process '''
 # saver
 saver = tf.train.Saver()
-
-''' Graph information'''
-if (printgraph is True) :
-    Xgraph = list()
-    Ygraph = list()
 
 # Initialize variables if restore path is null
 if restorepath == "NULL" :
@@ -215,60 +142,13 @@ else :
     else :
         print ("restore done")
 
-''' Setting for Tensorflow '''
-# coordinate
-coord = tf.train.Coordinator()
-threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-
-min_cost = float(4294967296)
-
-''' Train Model '''
-for epoch in range(training_epochs):
-    avg_cost = 0
-
-    for i in range(0, total_batch) :
-        # add info into batch count
-        X_batch, Y_batch = sess.run([X_batches, Y_batches])
-
-        feed_dict = {X: X_batch, Y: Y_batch, keep_prob: dropout_ratio}
-        c, _ = sess.run([cost, optimizer], feed_dict=feed_dict)
-        avg_cost += c / total_batch
-
-    if (avg_cost < min_cost) :
-        min_cost = avg_cost
-
-        if (snapshotmincost is True) and (snapshotmincostpath != "NULL") :
-            saver.save(sess, snapshotmincostpath)
-
-    if (epoch % print_interval) == 0 :
-        print('Epoch' , '{:7d}'.format(epoch), 'done. Cost :', '{:.9f}'.format(avg_cost))
-        #tf.Print(hypothesis, [hypothesis])
-
-        if savepath != "NULL" :
-            saver.save(sess, savepath)
-
-    if (printgraph is True) and (epoch % graph_interval) == 0 :
-        Xgraph.append(epoch)
-        Ygraph.append(avg_cost)
-
-coord.request_stop()
-coord.join(threads)
-
-print("Learning Done")
-
-''' Save if savepath exits '''
-if savepath != "NULL" :
-    saver.save(sess, savepath)
-    print("save done")
-
-
 ''' Get test value '''
 Xtest = list()
 Ytest = list()
 
 # Ytest values are filled with dummy data (float(1.0)) 
 #Xtest, Ytest = get_raw_data_from_csv(Xtest, Ytest, "America_NASDAQ.csv", drop_yarr = True, skipfirstline = True)
-Xtest, Ytest = get_raw_data_from_tsv(Xtest, Ytest, "test.txt", X_size = testdata_size,Y_size = 2, drop_yarr = False, skipfirstline = False)
+Xtest, Ytest = get_raw_data_from_tsv(Xtest, Ytest, "result.txt", X_size = testdata_size,Y_size = 2, drop_yarr = False, skipfirstline = False)
 
 ''' Test values '''
 correct_prediction = tf.equal(tf.argmax(hypothesis, 1), tf.argmax(Y, 1))
@@ -287,16 +167,7 @@ print_accuracy, predict_val, _ = sess.run([accuracy, hypothesis, Y], feed_dict={
 #print(PRINTW.eval())
 
 ''' Create output '''
-print("Min value : " + str(min_cost) + " (Save : " + str(snapshotmincost) + ")")
 #print("Accuracy  : " + str(print_accuracy * 100.0) + "%")
 print("Accuracy  : " + str(print_accuracy))
 print_result(predict_val, Ytest)
-#print_data(predict_val, "test.csv")
-
-''' Print Graph (Should be last) '''
-if (printgraph is True) :
-    plt.plot(Xgraph, Ygraph)
-    plt.show()
-
-if (showcost is True) :
-    print_cost(Xgraph, Ygraph, showcost_filename) 
+print_data(predict_val, "test.csv")

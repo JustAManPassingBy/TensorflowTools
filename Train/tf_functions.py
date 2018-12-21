@@ -144,23 +144,23 @@ def clipping_all_data(data_arr) :
     divider = list()
 
     for col in range(0, num_col) :
-        cur_max = -2000000000
-        cur_min = 2000000000
-        #cur_max_abs = 0 
+        #cur_max = -2000000000
+        #cur_min = 2000000000
+        cur_max_abs = 0 
         
         for row in range(0, num_row) :
-            if (data_arr[row][col] > cur_max) :
-                cur_max = data_arr[row][col]
-            if (data_arr[row][col] < cur_min) :
-                cur_min = data_arr[row][col]
-            #if (cur_max_abs < abs(data_arr[row][col])) :
-            #    cur_max_abs = abs(data_arr[row][col])
+            #if (data_arr[row][col] > cur_max) :
+            #   cur_max = data_arr[row][col]
+            #if (data_arr[row][col] < cur_min) :
+            #    cur_min = data_arr[row][col]
+            if (cur_max_abs < abs(data_arr[row][col])) :
+                cur_max_abs = abs(data_arr[row][col])
                     
-        multipler = (1.0 / float(cur_max - cur_min))
-        #multipler = (10.0 / float(cur_max_abs))
+        #multipler = (1.0 / float(cur_max - cur_min))
+        multipler = (10.0 / float(cur_max_abs))
 
         for row in range(0, num_row) :
-            data_arr[row][col] -= cur_min
+            #data_arr[row][col] -= cur_min
             data_arr[row][col] *= multipler
 
     print("cliping data with row x col :: " + str(num_row) + " x " + str(num_col)) 
@@ -236,7 +236,7 @@ def get_raw_data_from_csv (X_arr, Y_arr, filename, drop_yarr = False, skipfirstl
 # in train data, you have to write X_arr, Y_arr
 # in test data, you have to skip Y_arr
 # in csv, We assume first law is name of array
-def get_raw_data_from_tsv (X_arr, Y_arr, filename, Y_size = 1, drop_yarr = False, skipfirstline = True) :
+def get_raw_data_from_tsv (X_arr, Y_arr, filename, X_size = -1,Y_size = 1, drop_yarr = False, skipfirstline = True) :
     with open(filename, encoding="utf-8") as csvDataFile :
         tsv_reader = csv.reader(csvDataFile, delimiter='\t')
         
@@ -295,6 +295,9 @@ def get_raw_data_from_tsv (X_arr, Y_arr, filename, Y_size = 1, drop_yarr = False
 
                 # add X_arr
                 X_arr.append(row_items)
+
+                X_size -= 1
+                if (X_size is 0) : break
     
     # clipping data (only X array)
     X_arr = clipping_all_data(X_arr)
