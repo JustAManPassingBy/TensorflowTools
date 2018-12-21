@@ -144,23 +144,23 @@ def clipping_all_data(data_arr) :
     divider = list()
 
     for col in range(0, num_col) :
-        #cur_max = -2000000000
-        #cur_min = 2000000000
-        cur_max_abs = 0 
+        cur_max = -2000000000
+        cur_min = 2000000000
+        #cur_max_abs = 0 
         
         for row in range(0, num_row) :
-            #if (data_arr[row][col] > cur_max) :
-            #   cur_max = data_arr[row][col]
-            #if (data_arr[row][col] < cur_min) :
-            #    cur_min = data_arr[row][col]
-            if (cur_max_abs < abs(data_arr[row][col])) :
-                cur_max_abs = abs(data_arr[row][col])
+            if (data_arr[row][col] > cur_max) :
+               cur_max = data_arr[row][col]
+            if (data_arr[row][col] < cur_min) :
+                cur_min = data_arr[row][col]
+            #if (cur_max_abs < abs(data_arr[row][col])) :
+            #    cur_max_abs = abs(data_arr[row][col])
                     
-        #multipler = (1.0 / float(cur_max - cur_min))
-        multipler = (10.0 / float(cur_max_abs))
+        multipler = (1.0 / float(cur_max - cur_min))
+        #multipler = (10.0 / float(cur_max_abs))
 
         for row in range(0, num_row) :
-            #data_arr[row][col] -= cur_min
+            data_arr[row][col] -= cur_min
             data_arr[row][col] *= multipler
 
     print("cliping data with row x col :: " + str(num_row) + " x " + str(num_col)) 
