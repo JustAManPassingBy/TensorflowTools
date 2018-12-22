@@ -4,6 +4,7 @@ import random
 import matplotlib.pyplot as plt
 import math
 import datetime
+import sys
 
 from tf_functions import cost_predictor, get_data_with_float32, print_data, get_raw_data_from_csv, get_raw_data_from_tsv, print_result, print_cost
 
@@ -20,15 +21,15 @@ from tf_functions import cost_predictor, get_data_with_float32, print_data, get_
 ''' User Input '''
 ######## NEEDS TO CONSIDER VARIABLES
 # set random seed
-tf.set_random_seed(2416)
+tf.set_random_seed(665)
 
 # parameter
-my_learning_rate = 5e-4
+my_learning_rate = 1e-1
 my_regularization_rate = 0
-training_epochs = 10000
-dataset_size = 1517
+training_epochs = 1000
+dataset_size = 2
 testdata_size = 121
-batch_size = 10
+batch_size = 2
 print_interval = 100
 graph_interval = 5
 
@@ -53,6 +54,11 @@ printgraph = True
 showcost = True
 showcost_filename = "showcost.txt"
 
+# print all layer
+printalllayer = True
+# set stdout if you want to get results with standard output
+printalllayer_filename = "alllayer.txt"
+
 ''' Layers '''
 #direct Bridge
 direct_bridge = False
@@ -61,15 +67,15 @@ direct_bridge = False
 if (direct_bridge is True) :
     layer_size=[input_arraysize, input_arraysize, 64, 16, 3, output_arraysize]
 else : 
-    layer_size=[input_arraysize, 62, 214, 118, output_arraysize]
+    layer_size=[input_arraysize, 16, 4, output_arraysize]
 
 ''' save & restore variables '''
 # set "NULL" if don't have it
 # Example : savepath='/tmp/model.ckpt' savepate='NULL'
 # window " , linux '
 #savepath="/tmp/model.ckpt"
-savepath = restorepath="/tmp/model.ckpt"
-#savepath = restorepath = "NULL"
+#savepath = restorepath="/tmp/model.ckpt"
+savepath = restorepath = "NULL"
 snapshotmincostpath="/tmp/minmodel.ckpt"
 
 ######## END OF CONSIDER VARIABLES
@@ -94,6 +100,9 @@ if total_layer <= 1 :
 #total_batch = int(mnist.train.num_examples / batch_size)
 total_batch = int(dataset_size / batch_size)
 
+if (dataset_size % batch_size) != 0 :
+    total_batch += 1
+
 list_for_auto_control = list()
 
 # get session
@@ -115,6 +124,10 @@ Xarr, Yarr = get_raw_data_from_tsv(Xarr, Yarr, "train.txt", X_size = dataset_siz
 X_batches, Y_batches = tf.train.batch([Xarr, Yarr], batch_size=batch_size, enqueue_many=True, allow_smaller_final_batch=True)
 
 ''' Setting Layer '''
+# list for tensor
+wlist = list()
+blist = list()
+
 ### First layer - layer 1 ~ layer k - 1 - layer k
 # get variable  : get initialize node values with xavier initializer (size is [layer size[i] , layer size[i + 1])
 # varaible      : get constant variable
@@ -129,13 +142,6 @@ for i in range(0, total_layer - 1) :
     else :
         W = tf.Variable(tf.convert_to_tensor(np.eye(layer_size[i], dtype=np.float64)), name='W0')
 
-        # Get result for Direct Bridge
-        # Todo : synchronize with liunx...
-        W = tf.Print(W, [W], message="print")
-        PRINTW = tf.add(W, W)
-
-        B = tf.constant(float(0), shape=[layer_size[i + 1]], dtype=tf.float64)
-
     ## Layer Result
     # First layer : Get input
     if (i == 0) :
@@ -144,13 +150,17 @@ for i in range(0, total_layer - 1) :
             L = tf.nn.relu(tf.matmul(X, W) + B)
             L = tf.nn.dropout(L, keep_prob=dropout_ratio)
         else :
-            L = tf.nn.relu(tf.matmul(X, W) + B)
-            #L = tf.matmul(X, W) + B
+            L = tf.nn.relu(tf.matmul(X, W))
+            #L = tf.matmul(X, W)
     # Else : Get previous hidden
     elif (i != total_layer - 2) :
         L = tf.nn.relu(tf.matmul(PREVL, W) + B)
         #L = tf.matmul(PREVL, W) + B
         L = tf.nn.dropout(L, keep_prob=dropout_ratio)
+
+    wlist.append(W)
+    if (direct_bridge is False) or (i != 0) :
+        blist.append(B)
 
     PREVL = L
 
@@ -159,7 +169,8 @@ for i in range(0, total_layer - 1) :
 # hypothesis [0.9 0.1 0.0 0.0 ...] // O.9 might be an answer
 #hypothesis = tf.matmul(L, W) + B
 #hypothesis = tf.nn.relu(tf.matmul(L, W) + B)
-hypothesis= tf.sigmoid(tf.matmul(L, W) + B)
+#hypothesis= tf.sigmoid(tf.matmul(L, W) + B)
+hypothesis= tf.nn.tanh(tf.matmul(L, W) + B)
 
 ''' cost : For adjust learning flow '''
 # Cost is difference between label & hypothesis(Use softmax for maximize difference
@@ -167,7 +178,8 @@ hypothesis= tf.sigmoid(tf.matmul(L, W) + B)
 # Square = {for all X in [X], init M = 0 , M += (WX - Y)^2 , finally M /= sizeof([X]) 
 # label is true difference
 # reduce mean is average of all matrix's elements
-cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=hypothesis, labels=Y)) 
+cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=hypothesis, labels= Y))
+#cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=hypothesis, labels=Y)) 
 #cost = tf.reduce_mean(tf.square(hypothesis - Y))
 
 
@@ -179,8 +191,8 @@ l2reg = my_regularization_rate * tf.reduce_mean(tf.square(W))
 # define optimzer : To minimize cost / with learning rate / Use adam optimizer
 # https://smist08.wordpress.com/tag/adam-optimizer/ For find more optimizer
 # http://shuuki4.github.io/deep%20learning/2016/05/20/Gradient-Descent-Algorithm-Overview.html
-optimizer = tf.train.AdamOptimizer(learning_rate=my_learning_rate).minimize((cost - l2reg))
-#optimizer = tf.train.GradientDescentOptimizer(learning_rate=my_learning_rate).minimize(cost - l2reg)
+#optimizer = tf.train.AdamOptimizer(learning_rate=my_learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-8).minimize((cost - l2reg))
+optimizer = tf.train.GradientDescentOptimizer(learning_rate=my_learning_rate).minimize(cost - l2reg)
 
 ''' Restore Process '''
 # saver
@@ -293,6 +305,28 @@ print("Accuracy  : " + str(print_accuracy))
 #print_result(predict_val, Ytest)
 #print_data(predict_val, "test.csv")
 
+''' Print Result '''
+if (printalllayer is True) :
+    origin_stdout, sys.stdout = sys.stdout, open(printalllayer_filename, "w")
+    
+    print(" --- W0 --- ")
+    print(sess.run(wlist[0]), 2)
+
+    if direct_bridge is False : 
+        print(" --- B0 --- ")
+        print(sess.run(blist[0]))
+              
+    for i in range(1, len(layer_size) - 1) :
+        print("\n ====== NEW LAYER ======\n")
+
+        print(" --- W" + str(i) + " --- ")
+        print(sess.run(wlist[i]))
+
+        print(" --- B" + str(i) + " --- ")
+        print(sess.run(blist[i]))
+
+    sys.stdout = origin_stdout
+    
 ''' Print Graph (Should be last) '''
 if (printgraph is True) :
     plt.plot(Xgraph, Ygraph)

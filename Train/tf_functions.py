@@ -300,6 +300,6 @@ def get_raw_data_from_tsv (X_arr, Y_arr, filename, X_size = -1,Y_size = 1, drop_
                 if (X_size is 0) : break
     
     # clipping data (only X array)
-    X_arr = clipping_all_data(X_arr)
+    #X_arr = clipping_all_data(X_arr)
 
     return X_arr, Y_arr
