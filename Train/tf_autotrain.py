@@ -23,12 +23,12 @@ from tf_functions import cost_predictor, get_data_with_float32, print_data, get_
 tf.set_random_seed(2416)
 
 # parameter
-my_learning_rate = 5e-4
+my_learning_rate = 1e-4
 my_regularization_rate = 0
-training_epochs = 10000
-dataset_size = 1517
-testdata_size = 121
-batch_size = 10
+training_epochs = 500000
+dataset_size = 1516
+testdata_size = 120
+batch_size = 50
 print_interval = 100
 graph_interval = 5
 
@@ -61,7 +61,7 @@ direct_bridge = False
 if (direct_bridge is True) :
     layer_size=[input_arraysize, input_arraysize, 64, 16, 3, output_arraysize]
 else : 
-    layer_size=[input_arraysize, 62, 214, 118, output_arraysize]
+    layer_size=[input_arraysize, 63, 239, 118, output_arraysize]
 
 ''' save & restore variables '''
 # set "NULL" if don't have it
@@ -93,6 +93,9 @@ if total_layer <= 1 :
 
 #total_batch = int(mnist.train.num_examples / batch_size)
 total_batch = int(dataset_size / batch_size)
+
+if (dataset_size % batch_size) != 0 :
+    total_batch += 1
 
 list_for_auto_control = list()
 
