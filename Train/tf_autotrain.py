@@ -26,7 +26,7 @@ tf.set_random_seed(665)
 # parameter
 #my_learning_rate = 1e-1
 my_regularization_rate = 0
-training_epochs = 300000
+training_epochs = 500000
 dataset_size = 1516
 testdata_size = 121
 batch_size = 50
@@ -60,9 +60,9 @@ printalllayer = False
 printalllayer_filename = "alllayer.txt"
 
 # variable learning rate
-my_initial_learning_rate=1e-1
-decay_steps = 10000
-decay_rate = 0.1
+my_initial_learning_rate=1e-4
+decay_steps = 100000
+decay_rate = 3
 
 ''' Layers '''
 #direct Bridge
@@ -72,7 +72,7 @@ direct_bridge = False
 if (direct_bridge is True) :
     layer_size=[input_arraysize, input_arraysize, 64, 16, 3, output_arraysize]
 else : 
-    layer_size=[input_arraysize, 64, 128, 256, 256, 256, 64, 16, output_arraysize]
+    layer_size=[input_arraysize, 64, 128, 256, 256, 64, 16, output_arraysize]
 
 ''' save & restore variables '''
 # set "NULL" if don't have it
@@ -263,8 +263,8 @@ for epoch in range(training_epochs):
 
     if (epoch % print_interval) == 0 :
         print('Epoch' , '{:7d}'.format(epoch), 'done. Cost :', '{:.9f}'.format(avg_cost))
-        print(sess.run(my_learning_rate))
-        print(sess.run(global_step))
+        #print(sess.run(my_learning_rate))
+        #print(sess.run(global_step))
         #tf.Print(hypothesis, [hypothesis])
 
         if savepath != "NULL" :
