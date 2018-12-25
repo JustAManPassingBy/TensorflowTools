@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import math
 import datetime
 import sys
+import threading
+import time
 
 from tf_functions import cost_predictor, get_data_with_float32, print_data, get_raw_data_from_csv, get_raw_data_from_tsv, print_result, print_cost
 
@@ -26,16 +28,20 @@ tf.set_random_seed(665)
 # parameter
 #my_learning_rate = 1e-1
 my_regularization_rate = 0
-training_epochs = 500000
-dataset_size = 1516
+training_epochs = 1000
+dataset_size = 1517
 testdata_size = 121
-batch_size = 50
+batch_size = 2
 print_interval = 10
 graph_interval = 5
 
 # input / output size
-input_arraysize = 29
+input_arraysize = 28
 output_arraysize = 2
+
+# input / output filenam
+train_file="train.txt"
+test_file="test.txt"
 
 # dropout ratio
 dropout_ratio = 1.0
@@ -60,9 +66,12 @@ printalllayer = False
 printalllayer_filename = "alllayer.txt"
 
 # variable learning rate
-my_initial_learning_rate=1e-4
+my_initial_learning_rate=1e-3
 decay_steps = 100000
-decay_rate = 3
+decay_rate = 0.5
+
+# thread
+num_thread = 1
 
 ''' Layers '''
 #direct Bridge
@@ -79,8 +88,8 @@ else :
 # Example : savepath='/tmp/model.ckpt' savepate='NULL'
 # window " , linux '
 #savepath="/tmp/model.ckpt"
-savepath = restorepath="/tmp/model.ckpt"
-#savepath = restorepath = "NULL"
+#savepath = restorepath="/tmp/model.ckpt"
+savepath = restorepath = "NULL"
 snapshotmincostpath="/tmp/minmodel.ckpt"
 
 ######## END OF CONSIDER VARIABLES
@@ -122,11 +131,13 @@ Y = tf.placeholder(tf.float64, [None, layer_size[total_layer - 1]])
 Xarr = list()
 Yarr = list()
 #Xarr, Yarr = get_raw_data_from_csv(Xarr, Yarr, "America_NASDAQ.csv", drop_yarr = False, skipfirstline = True)
-Xarr, Yarr = get_raw_data_from_tsv(Xarr, Yarr, "train.txt", X_size = dataset_size, Y_size = 2, drop_yarr = False, skipfirstline = False)
+Xarr, Yarr = get_raw_data_from_tsv(Xarr, Yarr, train_file, X_size = dataset_size, Y_size = 2, drop_yarr = False, skipfirstline = False)
 
 # From Input data, create Batch(Slice of train data)
-# Todo make random
-X_batches, Y_batches = tf.train.batch([Xarr, Yarr], batch_size=batch_size, enqueue_many=True, allow_smaller_final_batch=True)
+#X_batches, Y_batches = tf.train.batch([Xarr, Yarr], batch_size=batch_size, enqueue_many=True, allow_smaller_final_batch=True)
+# Random batch
+num_min = num_thread * dataset_size
+X_batches, Y_batches = tf.train.shuffle_batch([Xarr, Yarr], enqueue_many=True, batch_size=batch_size, capacity = (num_thread + 2) * num_min , min_after_dequeue=(num_min), allow_smaller_final_batch=True)
 
 ''' Variable for learning rate '''
 global_step = tf.Variable(0, trainable=False)
@@ -291,7 +302,7 @@ Ytest = list()
 
 # Ytest values are filled with dummy data (float(1.0)) 
 #Xtest, Ytest = get_raw_data_from_csv(Xtest, Ytest, "America_NASDAQ.csv", drop_yarr = True, skipfirstline = True)
-Xtest, Ytest = get_raw_data_from_tsv(Xtest, Ytest, "test.txt", X_size = testdata_size,Y_size = 2, drop_yarr = False, skipfirstline = False)
+Xtest, Ytest = get_raw_data_from_tsv(Xtest, Ytest, test_file, X_size = testdata_size,Y_size = 2, drop_yarr = False, skipfirstline = False)
 
 ''' Test values '''
 correct_prediction = tf.equal(tf.argmax(hypothesis, 1), tf.argmax(Y, 1))

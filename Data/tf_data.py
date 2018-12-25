@@ -63,60 +63,67 @@ def make_data (data_list, startdate, enddate, filename, output_count, num_data) 
     
     # index : erase date info
     total_index = (num_data)
-    
-    my_file = open(filename, "w")
-    
-    for each_list in data_list :
-        # check omit data
-        if (len(each_list) < total_index) : continue
 
-        # check date
-        if ((each_list[0] > startdate) is False) or ((enddate > each_list[0]) is False) :
+    # will use TSV instead of CSV
+    with open(filename, 'w', encoding='utf-8', newline='\n') as csv_file :
+        csv_writer = csv.writer(csv_file, delimiter='\t')
+
+        # Maybe write first line (if you want)
+        
+        for each_list in data_list :
+            # check omit data
+            if (len(each_list) < total_index) : continue
+
+            # check date
+            if ((each_list[0] > startdate) is False) or ((enddate > each_list[0]) is False) :
+                prev_list = each_list
+                continue
+
+            if ((prev_list[0] > startdate) is False) or ((enddate > prev_list[0]) is False) :
+                #prev_prev_list = prev_list
+                prev_list = each_list
+                continue
+
+            #if (prev_prev_list[0] > startdate) is False or ((enddate > prev_prev_list[0]) is False):
+                #prev_prev_list = prev_list
+                #prev_list = each_list
+                #continue
+
+            total_item += 1
+
+            row_array=list()
+
+            # input write
+            for i in range (1, total_index) :
+                #my_file.write(str(round(prev_list[i] - prev_prev_list[i], 2)) + "\t")
+                row_array.append(round(prev_list[i] , 2))
+                #if (prev_list[i] >= 0) :
+                #    my_file.write("1.0\t")
+                #else :
+                #    my_file.write("0.0\t")
+
+            # output write
+            for i in range(3, 4) :
+                if ((each_list[i]) > 0) :
+                    row_array.append(float(1.0))
+                    row_array.append(float(0.0))
+                else :
+                    row_array.append(float(0.0))
+                    row_array.append(float(1.0))
+
+            # add newline
+            csv_writer.writerow(row_array)
+
+            valid_item += 1
+
+            prev_prev_list = prev_list
             prev_list = each_list
-            continue
-
-        if ((prev_list[0] > startdate) is False) or ((enddate > prev_list[0]) is False) :
-            #prev_prev_list = prev_list
-            prev_list = each_list
-            continue
-
-        #if (prev_prev_list[0] > startdate) is False or ((enddate > prev_prev_list[0]) is False):
-            #prev_prev_list = prev_list
-            #prev_list = each_list
-            #continue
-
-        total_item += 1
-
-        # input write
-        for i in range (1, total_index) :
-            #my_file.write(str(round(prev_list[i] - prev_prev_list[i], 2)) + "\t")
-            my_file.write(str(round(prev_list[i] , 2)) + "\t")
-            #if (prev_list[i] >= 0) :
-            #    my_file.write("1.0\t")
-            #else :
-            #    my_file.write("0.0\t")
-
-        # output write
-        for i in range(3, 4) :
-            if ((each_list[i]) > 0) :
-                my_file.write("1.0\t0.0\t")
-            else :
-                my_file.write("0.0\t1.0\t")
-
-        # add newline
-        my_file.write("\n")
-
-        valid_item += 1
-
-        prev_prev_list = prev_list
-        prev_list = each_list
         
 
     print(":: Make File info ::")
     print("File : " + filename)
     print("items : ", valid_item, " / ", total_item, " index(input) : ", total_index - 1, " index(output) : ", output_count)
 
-    my_file.close()
 
     
     return
@@ -132,6 +139,7 @@ get_data_from_csv_file(datalist, "ITALY.csv", isfirst = True)
 get_data_from_csv_file(datalist, "TA 35 내역.csv")
 num_datas += 2
 print("read 1.1 done")
+
 
 # 1.2
 get_data_from_csv_file(datalist, "코스피지수 내역.csv")
