@@ -1,3 +1,0 @@
-model_checkpoint_path: "tem_save"
-all_model_checkpoint_paths: "/tmp/model.ckpt"
-all_model_checkpoint_paths: "tem_save"
