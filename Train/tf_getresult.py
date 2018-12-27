@@ -4,10 +4,22 @@ import random
 import matplotlib.pyplot as plt
 import math
 import datetime
+import requests
+from bs4 import BeautifulSoup
 
-from tf_functions import cost_predictor, get_data_with_float32, print_data, get_raw_data_from_csv, get_raw_data_from_tsv, print_result, print_cost
+from tf_functions import print_data, print_cost, get_real_data_from_csv
 
+''' Get data from investing.com '''
+def get_data_from_web(web_address) :
+    req_web = requests.get(web_address)
+    req_html = req_web.text
 
+    souped_web = BeautifulSoup(req_html, "html.parser")
+
+    print(souped_web)
+
+    return
+    
 ''' User Input '''
 ######## NEEDS TO CONSIDER VARIABLES
 # set random seed
@@ -25,6 +37,7 @@ output_arraysize = 2
 #direct Bridge
 direct_bridge = False
 
+''' Notice ::: Same layer for things that you trained '''
 # Layer  input , layer '1' , layer '2'  ...  layer 'k' , output
 if (direct_bridge is True) :
     layer_size=[input_arraysize, input_arraysize, 64, 16, 3, output_arraysize]
@@ -36,8 +49,8 @@ else :
 # Example : savepath='/tmp/model.ckpt' savepate='NULL'
 # window " , linux '
 #savepath="/tmp/model.ckpt"
-savepath = restorepath="/tmp/model.ckpt"
-#savepath = restorepath = "NULL"
+#savepath = restorepath="/tmp/model.ckpt"
+savepath = restorepath = "NULL"
 snapshotmincostpath="/tmp/minmodel.ckpt"
 
 ######## END OF CONSIDER VARIABLES
@@ -113,7 +126,6 @@ hypothesis = tf.matmul(L, W) + B
 #hypothesis = tf.nn.relu(tf.matmul(L, W) + B)
 #hypothesis= tf.sigmoid(tf.matmul(L, W) + B)
 
-
 ''' Restore Process '''
 # saver
 saver = tf.train.Saver()
@@ -121,7 +133,6 @@ saver = tf.train.Saver()
 # Initialize variables if restore path is null
 if restorepath == "NULL" :
     sess.run(tf.global_variables_initializer())
-    print("Initialize variables")
 # Restore
 else :
     try :
@@ -133,41 +144,22 @@ else :
     except:
         print("Fail to restore from previous checkpoint")
         print("It might be happened in shrinking or expanding layers")
-        isyes = input("type [init] if you want to initilize all processes : ")
-        if (isyes.lower() == "init") :
-            sess.run(tf.global_variables_initializer())
-            print("Initialize variables")
-        else :
-            exit
+        isyes = input("type anything to exit : ")
+        exit
     else :
         print ("restore done")
 
 ''' Get test value '''
 Xtest = list()
-Ytest = list()
 
-# Ytest values are filled with dummy data (float(1.0)) 
 #Xtest, Ytest = get_raw_data_from_csv(Xtest, Ytest, "America_NASDAQ.csv", drop_yarr = True, skipfirstline = True)
-Xtest, Ytest = get_raw_data_from_tsv(Xtest, Ytest, "result.txt", X_size = testdata_size,Y_size = 2, drop_yarr = False, skipfirstline = False)
-
-''' Test values '''
-correct_prediction = tf.equal(tf.argmax(hypothesis, 1), tf.argmax(Y, 1))
-#correct_prediction = tf.equal(hypothesis, Y)
-#correct_prediction = tf.square(hypothesis -  Y)
-
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float64))
-#accuracy = tf.reduce_mean(correct_prediction)
+Xtest = get_real_data_from_csv(Xtest, "세계 주요 지수.csv")
 
 ''' Check result '''
 # sess.run([Output formats(hypothesis, Y)], feed_dictionary(see below)
-print_accuracy, predict_val, _ = sess.run([accuracy, hypothesis, Y], feed_dict={X : Xtest, Y : Ytest, keep_prob: 1})
-
-''' Print result '''
-# Todo : Synchronize with output
-#print(PRINTW.eval())
+predict_val = sess.run([hypothesis], feed_dict={X : Xtest, keep_prob: 1})
 
 ''' Create output '''
 #print("Accuracy  : " + str(print_accuracy * 100.0) + "%")
-print("Accuracy  : " + str(print_accuracy))
-print_result(predict_val, Ytest)
-print_data(predict_val, "test.csv")
+print("--- Expecting ---")
+print(predict_val)

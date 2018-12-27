@@ -167,6 +167,64 @@ def clipping_all_data(data_arr) :
 
     return data_arr
 
+def clipping_all_data_with_normalization(data_arr) :
+    num_row = len(data_arr)
+    num_col = len(data_arr[0])
+
+    # Data set : target mean : 0.5 // target std_dev 0.5
+    target_mean=0
+    target_std_dev=1
+
+    for col in range(0, num_col) :
+        mean = 0
+        items = 0
+        std_dev = 0
+        
+        for row in range(0, num_row) :
+            mean += data_arr[row][col]
+            items += 1
+
+        mean = float(mean) / float(items)
+
+        for row in range(0, num_row) :
+            std_dev += pow(data_arr[row][col] - mean, 2)   
+                    
+        std_dev = math.sqrt(float(std_dev) / float(items))
+
+        for row in range(0, num_row) :
+            data_arr[row][col] = (target_std_dev * ((data_arr[row][col] - mean) / std_dev)) + target_mean
+
+    print("cliping data in standard ::  row x col :: " + str(num_row) + " x " + str(num_col))
+    print("mean : " + str(target_mean) + " // std_dev : " + str(target_std_dev))
+
+    return data_arr
+
+# get raw data from csv
+def get_real_data_from_csv(X_arr, filename) :
+    col_count = 8
+    use_col = [2, 3, 4, 6]
+
+    with open(filename, encoding="utf-8") as csvDataFile :
+        csv_reader = csv.reader(csvDataFile)
+
+        idx = 0
+
+        for row in csv_reader :
+            for col in row :
+                if (idx in skip_col) :
+                    # check empty
+                    if (col == "") :
+                        col_item = float(0)
+                    # skip last item
+                    elif (col[-1].isdigit()) is False :
+                        col_item = float(col[:-1])
+                    else :
+                        col_item = float(col)
+
+                    X_arr.append(col_item)
+
+                idx = (idx + 1) % col_count
+
 # Get data from csv
 # in train data, you have to write X_arr, Y_arr
 # in test data, you have to skip Y_arr
@@ -274,8 +332,8 @@ def get_raw_data_from_tsv (X_arr, Y_arr, filename, X_size = -1,Y_size = 1, drop_
                     
                     row_items.append(col_item)
 
-                # pop last tab
-                row_items.pop()
+                # pop last tab(Removed with improvement of file reads)
+                #row_items.pop()
             
                 # if Y_arr is exist
                 # put last item onto Y array
@@ -298,8 +356,10 @@ def get_raw_data_from_tsv (X_arr, Y_arr, filename, X_size = -1,Y_size = 1, drop_
 
                 X_size -= 1
                 if (X_size is 0) : break
+
     
     # clipping data (only X array)
     #X_arr = clipping_all_data(X_arr)
+    X_arr = clipping_all_data_with_normalization(X_arr)
 
     return X_arr, Y_arr
