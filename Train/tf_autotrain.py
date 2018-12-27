@@ -28,18 +28,16 @@ tf.set_random_seed(764)
 # parameter
 my_learning_rate = 1e-3
 my_regularization_rate = 0
-training_epochs = 15
-dataset_size = mnist.train.num_examples
+training_epochs = 300000
+dataset_size = 1517
 testdata_size = 121
-batch_size = 100
-print_interval = 1
-graph_interval = 1
-
-print(dataset_size)
+batch_size = 20
+print_interval = 100
+graph_interval = 5
 
 # input / output size
-input_arraysize = 784
-output_arraysize = 10
+input_arraysize = 145
+output_arraysize = 2
 
 # input / output filenam
 train_file="train.txt"
@@ -68,7 +66,7 @@ printalllayer = True
 printalllayer_filename = "alllayer.txt"
 
 # variable learning rate
-my_initial_learning_rate=1e-2
+my_initial_learning_rate=1e-5
 decay_steps = 100000
 decay_rate = 0.98
 
@@ -81,9 +79,9 @@ direct_bridge = True
 
 # Layer  input , layer '1' , layer '2'  ...  layer 'k' , output
 if (direct_bridge is True) :
-    layer_size=[input_arraysize, input_arraysize, 164, 68, 24, 8, output_arraysize]
+    layer_size=[input_arraysize, input_arraysize, 557, 326, 224, 72, 24, output_arraysize]
 else : 
-    layer_size=[input_arraysize, 232, 67, 16, 4 ,output_arraysize]
+    layer_size=[input_arraysize, 434, 326, 257, 72, 24, output_arraysize]
 
 ''' save & restore variables '''
 # set "NULL" if don't have it
@@ -332,9 +330,8 @@ print('Accuracy:', sess.run(accuracy, feed_dict={ X: mnist.test.images, Y: mnist
 
 ''' Create output '''
 #print("Min value : " + str(min_cost) + " (Save : " + str(snapshotmincost) + ")")
-#print("Accuracy  : " + str(print_accuracy * 100.0) + "%")
-#print("Accuracy  : " + str(print_accuracy))
-#print_result(predict_val, Ytest)
+print("Accuracy  : " + str(print_accuracy * 100.0) + "%")
+print_result(predict_val, Ytest)
 #print_data(predict_val, "test.csv")
 
 ''' Print Result '''
