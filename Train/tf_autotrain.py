@@ -28,15 +28,15 @@ tf.set_random_seed(665)
 # parameter
 #my_learning_rate = 1e-1
 my_regularization_rate = 0
-training_epochs = 1000
+training_epochs = 300000
 dataset_size = 1517
 testdata_size = 121
-batch_size = 2
-print_interval = 10
+batch_size = 20
+print_interval = 100
 graph_interval = 5
 
 # input / output size
-input_arraysize = 28
+input_arraysize = 145
 output_arraysize = 2
 
 # input / output filenam
@@ -66,30 +66,30 @@ printalllayer = False
 printalllayer_filename = "alllayer.txt"
 
 # variable learning rate
-my_initial_learning_rate=1e-3
+my_initial_learning_rate=1e-5
 decay_steps = 100000
-decay_rate = 0.5
+decay_rate = 0.98
 
 # thread
 num_thread = 1
 
 ''' Layers '''
 #direct Bridge
-direct_bridge = False
+direct_bridge = True
 
 # Layer  input , layer '1' , layer '2'  ...  layer 'k' , output
 if (direct_bridge is True) :
-    layer_size=[input_arraysize, input_arraysize, 64, 16, 3, output_arraysize]
+    layer_size=[input_arraysize, input_arraysize, 557, 326, 224, 72, 24, output_arraysize]
 else : 
-    layer_size=[input_arraysize, 64, 128, 256, 256, 64, 16, output_arraysize]
+    layer_size=[input_arraysize, 434, 326, 257, 72, 24, output_arraysize]
 
 ''' save & restore variables '''
 # set "NULL" if don't have it
 # Example : savepath='/tmp/model.ckpt' savepate='NULL'
 # window " , linux '
 #savepath="/tmp/model.ckpt"
-#savepath = restorepath="/tmp/model.ckpt"
-savepath = restorepath = "NULL"
+savepath = restorepath="/tmp/model.ckpt"
+#savepath = restorepath = "NULL"
 snapshotmincostpath="/tmp/minmodel.ckpt"
 
 ######## END OF CONSIDER VARIABLES
@@ -189,8 +189,8 @@ for i in range(0, total_layer - 1) :
 # hypothesis [0.9 0.1 0.0 0.0 ...] // O.9 might be an answer
 #hypothesis = tf.matmul(L, W) + B
 #hypothesis = tf.nn.relu(tf.matmul(L, W) + B)
-#hypothesis= tf.sigmoid(tf.matmul(L, W) + B)
-hypothesis= tf.nn.tanh(tf.matmul(L, W) + B)
+hypothesis= tf.sigmoid(tf.matmul(L, W) + B)
+#hypothesis= tf.nn.tanh(tf.matmul(L, W) + B)
 
 ''' cost : For adjust learning flow '''
 # Cost is difference between label & hypothesis(Use softmax for maximize difference
@@ -324,7 +324,7 @@ print_accuracy, predict_val, _ = sess.run([accuracy, hypothesis, Y], feed_dict={
 print("Min value : " + str(min_cost) + " (Save : " + str(snapshotmincost) + ")")
 #print("Accuracy  : " + str(print_accuracy * 100.0) + "%")
 print("Accuracy  : " + str(print_accuracy))
-#print_result(predict_val, Ytest)
+print_result(predict_val, Ytest)
 #print_data(predict_val, "test.csv")
 
 ''' Print Result '''

@@ -33,12 +33,12 @@ def get_data_from_csv_file (prev_list, filename, isfirst = False) :
                                 target_list = list_item
                         
                 # else if count >= 7
-                elif (item_count >= 7) :
+                elif (item_count >= 2) and (item_count != 6) :
                     col = col.replace(",","")
 
                     # check data type
-                    if (col == "") :
-                        col_item = float(0)
+                    if (len(col) < 1) :
+                        col_item = float(0.0)
                     elif (col[-1].isdigit()) is False :
                         col_item = float(col[:-1])
                     else :
@@ -103,13 +103,14 @@ def make_data (data_list, startdate, enddate, filename, output_count, num_data) 
                 #    my_file.write("0.0\t")
 
             # output write
-            for i in range(3, 4) :
+            for i in range(15, 16) :
                 if ((each_list[i]) > 0) :
                     row_array.append(float(1.0))
                     row_array.append(float(0.0))
                 else :
                     row_array.append(float(0.0))
                     row_array.append(float(1.0))
+                #row_array.append(round(each_list[i], 2))
 
             # add newline
             csv_writer.writerow(row_array)
@@ -134,10 +135,13 @@ datalist = list()
 # date info
 num_datas = 1
 
+# multiple(row item)
+multiple = 5
+
 # 1.1
 get_data_from_csv_file(datalist, "ITALY.csv", isfirst = True)
 get_data_from_csv_file(datalist, "TA 35 내역.csv")
-num_datas += 2
+num_datas += 2 * multiple
 print("read 1.1 done")
 
 
@@ -159,7 +163,7 @@ get_data_from_csv_file(datalist, "항셍 내역.csv")
 get_data_from_csv_file(datalist, "인도네시아 IDX 내역.csv")
 get_data_from_csv_file(datalist, "Nifty 50 내역.csv")
 get_data_from_csv_file(datalist, "CSE All-Share 내역.csv")
-num_datas += 17
+num_datas += 17 * multiple
 print("read 1.2 done")
 
 # 1.3
@@ -169,28 +173,28 @@ get_data_from_csv_file(datalist, "나스닥 내역.csv")
 get_data_from_csv_file(datalist, "Russell 2000 내역.csv")
 get_data_from_csv_file(datalist, "CBOE Volatility Index 내역.csv")
 get_data_from_csv_file(datalist, "스위스 SMI 내역.csv")
-num_datas += 6
+num_datas += 6 * multiple
 print("read 1.3 done")
 
 # 1.4
 get_data_from_csv_file(datalist, "닛케이 내역.csv")
 get_data_from_csv_file(datalist, "상하이종합 내역.csv")
-num_datas += 2
+num_datas += 2 * multiple
 
 # 1.9
 get_data_from_csv_file(datalist, "러시아 MOEX Russia 내역.csv")
 get_data_from_csv_file(datalist, "RTSI 지수 내역.csv")
-num_datas += 2
+num_datas += 2 * multiple
 print("read 1.9 done")
 
 my_start_date = datetime.datetime.strptime("2007년 01월 01일", "%Y년 %m월 %d일")
 my_end_date = datetime.datetime.strptime("2017년 12월 31일", "%Y년 %m월 %d일")
 
-make_data(datalist, my_start_date, my_end_date, "train.txt", 2, num_datas)
+make_data(datalist, my_start_date, my_end_date, "train.txt", 1, num_datas)
 print("train data make done")
 
 my_test_start_date = datetime.datetime.strptime("2018년 01월 01일", "%Y년 %m월 %d일")
 my_test_end_date = datetime.datetime.strptime("2018년 12월 6일", "%Y년 %m월 %d일")
 
-make_data(datalist, my_test_start_date, my_test_end_date, "test.txt", 2, num_datas)
+make_data(datalist, my_test_start_date, my_test_end_date, "test.txt", 1, num_datas)
 print("test data make done")

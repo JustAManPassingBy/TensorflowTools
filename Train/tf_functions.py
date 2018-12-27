@@ -120,6 +120,9 @@ def print_result(X, Y) :
     col_X = len(X[0])
     col_Y = len(Y[0])
 
+    item = 0
+    correct = 0
+
     for cur_row in range(0, row) :
         print("Expect : ", end ='')
 
@@ -132,8 +135,16 @@ def print_result(X, Y) :
             print(Y[cur_row][cur_col], end ='')
             print(", ", end ='')
 
+        #check
+        item += 1
+
+        if (X[cur_row][cur_col] * Y[cur_row][cur_col] >= 0) :
+            correct += 1
+
         print("")
 
+
+    print("Accuracy with p/m : " + str(float(correct) / float(item) * 100.0))
         
 
 # clipping data with range between 0 ~ 1)
@@ -155,9 +166,9 @@ def clipping_all_data(data_arr) :
                 cur_min = data_arr[row][col]
             #if (cur_max_abs < abs(data_arr[row][col])) :
             #    cur_max_abs = abs(data_arr[row][col])
-                    
+
         multipler = (1.0 / float(cur_max - cur_min))
-        #multipler = (10.0 / float(cur_max_abs))
+        #multipler = (5.0 / float(cur_max_abs))
 
         for row in range(0, num_row) :
             data_arr[row][col] -= cur_min
@@ -275,7 +286,7 @@ def get_raw_data_from_tsv (X_arr, Y_arr, filename, X_size = -1,Y_size = 1, drop_
                     row_items.append(col_item)
 
                 # pop last tab
-                row_items.pop()
+                #row_items.pop()
             
                 # if Y_arr is exist
                 # put last item onto Y array
@@ -300,6 +311,6 @@ def get_raw_data_from_tsv (X_arr, Y_arr, filename, X_size = -1,Y_size = 1, drop_
                 if (X_size is 0) : break
     
     # clipping data (only X array)
-    #X_arr = clipping_all_data(X_arr)
+    X_arr = clipping_all_data(X_arr)
 
     return X_arr, Y_arr
