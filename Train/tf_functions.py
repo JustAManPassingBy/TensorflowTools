@@ -214,27 +214,43 @@ def clipping_all_data_with_normalization(data_arr) :
 def get_real_data_from_csv(X_arr, filename) :
     col_count = 8
     use_col = [2, 3, 4, 6]
+    use_rowid = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 18, 20, 21, 22, 23, 26, 28, 29, 30, 34, 37, 38, 39, 42]
 
     with open(filename, encoding="utf-8") as csvDataFile :
         csv_reader = csv.reader(csvDataFile)
 
+        X_list = list()
+
         idx = 0
+        rowid = 0
 
         for row in csv_reader :
             for col in row :
-                if (idx in skip_col) :
+                if (idx in use_col) and (rowid in use_rowid) :
                     # check empty
                     if (col == "") :
                         col_item = float(0)
                     # skip last item
                     elif (col[-1].isdigit()) is False :
-                        col_item = float(col[:-1])
+                        col_item = float(col[:-1].replace(",", ""))
                     else :
-                        col_item = float(col)
+                        col_item = float(col.replace(",", ""))
 
-                    X_arr.append(col_item)
+                    X_list.append(col_item)
 
-                idx = (idx + 1) % col_count
+                if (idx == 0) and (rowid in use_rowid) :
+                    print (col)
+
+                idx += 1
+
+                if (idx == col_count) :
+                    idx = 0
+                    rowid += 1
+
+    X_arr.append(X_list)
+
+    return X_arr
+                    
 
 # Get data from csv
 # in train data, you have to write X_arr, Y_arr
@@ -297,7 +313,7 @@ def get_raw_data_from_csv (X_arr, Y_arr, filename, drop_yarr = False, skipfirstl
                 X_arr.append(row_items)
     
     # clipping data (only X array)
-    X_arr = clipping_all_data(X_arr)
+    #X_arr = clipping_all_data(X_arr)
 
     return X_arr, Y_arr
 
@@ -370,6 +386,6 @@ def get_raw_data_from_tsv (X_arr, Y_arr, filename, X_size = -1,Y_size = 1, drop_
 
     
     # clipping data (only X array)
-    X_arr = clipping_all_data(X_arr)
+    #X_arr = clipping_all_data(X_arr)
 
     return X_arr, Y_arr

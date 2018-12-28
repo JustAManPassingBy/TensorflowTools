@@ -12,8 +12,8 @@ from tf_functions import cost_predictor, get_data_with_float32, print_data, get_
 
 ''' For Mnist Data '''
 # Collect mnist data
-from tensorflow.examples.tutorials.mnist import input_data
-mnist = input_data.read_data_sets("MNIST_data", one_hot=True)
+#from tensorflow.examples.tutorials.mnist import input_data
+#mnist = input_data.read_data_sets("MNIST_data", one_hot=True)
 
 
 ## print(Array.ndim) == print rank
@@ -26,17 +26,17 @@ mnist = input_data.read_data_sets("MNIST_data", one_hot=True)
 tf.set_random_seed(764)
 
 # parameter
-my_learning_rate = 1e-3
+my_learning_rate = 1e-4
 my_regularization_rate = 0
-training_epochs = 300000
-dataset_size = 1517
-testdata_size = 121
+training_epochs = 200000
+dataset_size = 1333
+testdata_size = 111
 batch_size = 20
 print_interval = 100
 graph_interval = 5
 
 # input / output size
-input_arraysize = 145
+input_arraysize = 116
 output_arraysize = 2
 
 # input / output filenam
@@ -66,7 +66,7 @@ printalllayer = True
 printalllayer_filename = "alllayer.txt"
 
 # variable learning rate
-my_initial_learning_rate=1e-5
+my_initial_learning_rate=1e-4
 decay_steps = 100000
 decay_rate = 0.98
 
@@ -79,7 +79,7 @@ direct_bridge = True
 
 # Layer  input , layer '1' , layer '2'  ...  layer 'k' , output
 if (direct_bridge is True) :
-    layer_size=[input_arraysize, input_arraysize, 557, 326, 224, 72, 24, output_arraysize]
+    layer_size=[input_arraysize, input_arraysize, 86, 72, 32, 12, output_arraysize]
 else : 
     layer_size=[input_arraysize, 434, 326, 257, 72, 24, output_arraysize]
 
@@ -128,15 +128,15 @@ Y = tf.placeholder(tf.float64, [None, layer_size[total_layer - 1]])
 
 ''' Make & Get array for train data '''
 # collect input data
-#Xarr = list()
-#Yarr = list()
+Xarr = list()
+Yarr = list()
 #Xarr, Yarr = get_raw_data_from_csv(Xarr, Yarr, "America_NASDAQ.csv", drop_yarr = False, skipfirstline = True)
-#Xarr, Yarr = get_raw_data_from_tsv(Xarr, Yarr, train_file, X_size = dataset_size, Y_size = 2, drop_yarr = False, skipfirstline = False)
+Xarr, Yarr = get_raw_data_from_tsv(Xarr, Yarr, train_file, X_size = dataset_size, Y_size = 2, drop_yarr = False, skipfirstline = False)
 
 # From Input data, create Batch(Slice of train data)
-#X_batches, Y_batches = tf.train.batch([Xarr, Yarr], batch_size=batch_size, enqueue_many=True, allow_smaller_final_batch=True)
+X_batches, Y_batches = tf.train.batch([Xarr, Yarr], batch_size=batch_size, enqueue_many=True, allow_smaller_final_batch=True)
 # Random batch
-#num_min = num_thread * dataset_size
+num_min = num_thread * dataset_size
 #X_batches, Y_batches = tf.train.shuffle_batch([Xarr, Yarr], enqueue_many=True, batch_size=batch_size, capacity = (num_thread + 2) * num_min , min_after_dequeue=(num_min), allow_smaller_final_batch=True)
 
 ''' Variable for Dynamically change learning rate '''
@@ -211,7 +211,7 @@ l2reg = my_regularization_rate * tf.reduce_mean(tf.square(W))
 # define optimzer : To minimize cost / with learning rate / Use adam optimizer
 # https://smist08.wordpress.com/tag/adam-optimizer/ For find more optimizer
 # http://shuuki4.github.io/deep%20learning/2016/05/20/Gradient-Descent-Algorithm-Overview.html
-optimizer = tf.train.AdamOptimizer(learning_rate=my_learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-8).minimize((cost - l2reg))
+optimizer = tf.train.AdamOptimizer(learning_rate=my_learning_rate, beta1=0.9, beta2=0.9999, epsilon=1e-9).minimize((cost - l2reg))
 #optimizer = tf.train.AdamOptimizer(learning_rate=my_learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-8).minimize((cost - l2reg), global_step=global_step)
 #optimizer = tf.train.GradientDescentOptimizer(learning_rate=my_learning_rate).minimize(cost - l2reg)
 
@@ -261,11 +261,10 @@ for epoch in range(training_epochs):
 
     for i in range(0, total_batch) :
         # add info into batch count
-        #X_batch, Y_batch = sess.run([X_batches, Y_batches])
+        X_batch, Y_batch = sess.run([X_batches, Y_batches])
 
         # For mnist
-        X_batch, Y_batch = mnist.train.next_batch(batch_size)
-
+        #X_batch, Y_batch = mnist.train.next_batch(batch_size)
 
         feed_dict = {X: X_batch, Y: Y_batch, keep_prob: dropout_ratio}
         c, _ = sess.run([cost, optimizer], feed_dict=feed_dict)
@@ -304,12 +303,12 @@ if savepath != "NULL" :
 
 
 ''' Get test value '''
-#Xtest = list()
-#Ytest = list()
+Xtest = list()
+Ytest = list()
 
 # Ytest values are filled with dummy data (float(1.0)) 
 #Xtest, Ytest = get_raw_data_from_csv(Xtest, Ytest, "America_NASDAQ.csv", drop_yarr = True, skipfirstline = True)
-#Xtest, Ytest = get_raw_data_from_tsv(Xtest, Ytest, test_file, X_size = testdata_size,Y_size = 2, drop_yarr = False, skipfirstline = False)
+Xtest, Ytest = get_raw_data_from_tsv(Xtest, Ytest, test_file, X_size = testdata_size,Y_size = 2, drop_yarr = False, skipfirstline = False)
 
 ''' Test values '''
 correct_prediction = tf.equal(tf.argmax(hypothesis, 1), tf.argmax(Y, 1))
@@ -321,8 +320,8 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float64))
 
 ''' Check result '''
 # sess.run([Output formats(hypothesis, Y)], feed_dictionary(see below)
-#print_accuracy, predict_val, _ = sess.run([accuracy, hypothesis, Y], feed_dict={X : Xtest, Y : Ytest, keep_prob: 1})
-print('Accuracy:', sess.run(accuracy, feed_dict={ X: mnist.test.images, Y: mnist.test.labels}))
+print_accuracy, predict_val, _ = sess.run([accuracy, hypothesis, Y], feed_dict={X : Xtest, Y : Ytest, keep_prob: 1})
+#print('Accuracy:', sess.run(accuracy, feed_dict={ X: mnist.test.images, Y: mnist.test.labels}))
 
 ''' Print result '''
 # Todo : Synchronize with output

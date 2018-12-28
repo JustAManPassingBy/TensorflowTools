@@ -22,35 +22,28 @@ def get_data_from_web(web_address) :
     
 ''' User Input '''
 ######## NEEDS TO CONSIDER VARIABLES
-# set random seed
-tf.set_random_seed(2416)
-
-# parameter
-testdata_size = 121
-
 # input / output size
-input_arraysize = 29
+input_arraysize = 116
 output_arraysize = 2
-
 
 ''' Layers '''
 #direct Bridge
-direct_bridge = False
+direct_bridge = True
 
 ''' Notice ::: Same layer for things that you trained '''
 # Layer  input , layer '1' , layer '2'  ...  layer 'k' , output
 if (direct_bridge is True) :
-    layer_size=[input_arraysize, input_arraysize, 64, 16, 3, output_arraysize]
+    layer_size=[input_arraysize, input_arraysize, 86, 72, 32, 12, output_arraysize]
 else : 
-    layer_size=[input_arraysize, 324, 117, output_arraysize]
+    layer_size=[input_arraysize, 434, 326, 257, 72, 24, output_arraysize]
 
 ''' save & restore variables '''
 # set "NULL" if don't have it
 # Example : savepath='/tmp/model.ckpt' savepate='NULL'
 # window " , linux '
-#savepath="/tmp/model.ckpt"
+restorepath = "/tmp/model.ckpt"
 #savepath = restorepath="/tmp/model.ckpt"
-savepath = restorepath = "NULL"
+#savepath = restorepath = "NULL"
 snapshotmincostpath="/tmp/minmodel.ckpt"
 
 ######## END OF CONSIDER VARIABLES
