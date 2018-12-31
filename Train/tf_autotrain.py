@@ -28,12 +28,13 @@ tf.set_random_seed(764)
 # parameter
 my_learning_rate = 1e-4
 my_regularization_rate = 0
-training_epochs = 200000
+training_epochs = 500
 dataset_size = 1333
 testdata_size = 111
 batch_size = 20
 print_interval = 100
 graph_interval = 5
+summary_interval = 10
 
 # input / output size
 input_arraysize = 116
@@ -66,7 +67,7 @@ printalllayer = True
 printalllayer_filename = "alllayer.txt"
 
 # variable learning rate
-my_initial_learning_rate=1e-4
+my_initial_learning_rate=1e-3
 decay_steps = 100000
 decay_rate = 0.98
 
@@ -75,13 +76,13 @@ num_thread = 1
 
 ''' Layers '''
 #direct Bridge
-direct_bridge = True
+direct_bridge = False
 
 # Layer  input , layer '1' , layer '2'  ...  layer 'k' , output
 if (direct_bridge is True) :
     layer_size=[input_arraysize, input_arraysize, 86, 72, 32, 12, output_arraysize]
 else : 
-    layer_size=[input_arraysize, 434, 326, 257, 72, 24, output_arraysize]
+    layer_size=[input_arraysize, 86, 72, 32, 12, output_arraysize]
 
 ''' save & restore variables '''
 # set "NULL" if don't have it
@@ -134,10 +135,10 @@ Yarr = list()
 Xarr, Yarr = get_raw_data_from_tsv(Xarr, Yarr, train_file, X_size = dataset_size, Y_size = 2, drop_yarr = False, skipfirstline = False)
 
 # From Input data, create Batch(Slice of train data)
-X_batches, Y_batches = tf.train.batch([Xarr, Yarr], batch_size=batch_size, enqueue_many=True, allow_smaller_final_batch=True)
+#X_batches, Y_batches = tf.train.batch([Xarr, Yarr], batch_size=batch_size, enqueue_many=True, allow_smaller_final_batch=True)
 # Random batch
 num_min = num_thread * dataset_size
-#X_batches, Y_batches = tf.train.shuffle_batch([Xarr, Yarr], enqueue_many=True, batch_size=batch_size, capacity = (num_thread + 2) * num_min , min_after_dequeue=(num_min), allow_smaller_final_batch=True)
+X_batches, Y_batches = tf.train.shuffle_batch([Xarr, Yarr], enqueue_many=True, batch_size=batch_size, capacity = (num_thread + 2) * num_min , min_after_dequeue=(num_min), allow_smaller_final_batch=True)
 
 ''' Variable for Dynamically change learning rate '''
 #global_step = tf.Variable(0, trainable=False)
@@ -184,6 +185,17 @@ for i in range(0, total_layer - 1) :
 
     PREVL = L
 
+''' histogram_summay '''
+if (direct_bridge is False) :
+    whist = tf.summary.histogram("weights" + "0", wlist[0])
+    bhist = tf.summary.histogram("bias" + "0", blist[0])
+else :
+    whist = tf.summary.histogram("weights" + "0", wlist[0])
+
+for i in range(1, total_layer - 1) :
+    whist = tf.summary.histogram("weights" + str(i), wlist[i])
+    bhist = tf.summary.histogram("bias" + str(i), blist[i])   
+
 ''' Your hypothesis (X => Layer => Hypothesis) '''
 # set hypothesis
 # hypothesis [0.9 0.1 0.0 0.0 ...] // O.9 might be an answer
@@ -192,6 +204,10 @@ hypothesis = tf.matmul(L, W) + B
 #hypothesis= tf.sigmoid(tf.matmul(L, W) + B)
 #hypothesis= tf.nn.tanh(tf.matmul(L, W) + B)
 
+''' Two, merge all history, and record '''
+hyphist = tf.summary.histogram("hypothesis", hypothesis)
+merged = tf.summary.merge_all()
+
 ''' cost : For adjust learning flow '''
 # Cost is difference between label & hypothesis(Use softmax for maximize difference
 # [0.9 0.1 0.0 0.0 ...] ===(softmax)==> [1 0 0 0 ...] (Soft max is empthsize special answer)
@@ -199,8 +215,8 @@ hypothesis = tf.matmul(L, W) + B
 # label is true difference
 # reduce mean is average of all matrix's elements
 #cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=hypothesis, labels= Y))
-cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=hypothesis, labels=Y)) 
-#cost = tf.reduce_mean(tf.square(hypothesis - Y))
+#cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=hypothesis, labels=Y)) 
+cost = tf.reduce_mean(tf.square(hypothesis - Y))
 
 
 ''' Regularization (If want) '''
@@ -218,6 +234,7 @@ optimizer = tf.train.AdamOptimizer(learning_rate=my_learning_rate, beta1=0.9, be
 ''' Restore Process '''
 # saver
 saver = tf.train.Saver()
+writer = tf.summary.FileWriter("./logs/train_logs", sess.graph)
 
 ''' Graph information'''
 if (printgraph is True) :
@@ -267,7 +284,7 @@ for epoch in range(training_epochs):
         #X_batch, Y_batch = mnist.train.next_batch(batch_size)
 
         feed_dict = {X: X_batch, Y: Y_batch, keep_prob: dropout_ratio}
-        c, _ = sess.run([cost, optimizer], feed_dict=feed_dict)
+        c, merge_result, _ = sess.run([cost, merged, optimizer], feed_dict=feed_dict)
         avg_cost += c / total_batch
 
     if (avg_cost < min_cost) :
@@ -290,6 +307,9 @@ for epoch in range(training_epochs):
     if (printgraph is True) and (epoch % graph_interval) == 0 :
         Xgraph.append(epoch)
         Ygraph.append(avg_cost)
+
+    if (epoch % summary_interval) == 0 :
+        writer.add_summary(merge_result, epoch)
 
 coord.request_stop()
 coord.join(threads)
@@ -330,7 +350,7 @@ print_accuracy, predict_val, _ = sess.run([accuracy, hypothesis, Y], feed_dict={
 ''' Create output '''
 #print("Min value : " + str(min_cost) + " (Save : " + str(snapshotmincost) + ")")
 print("Accuracy  : " + str(print_accuracy * 100.0) + "%")
-print_result(predict_val, Ytest)
+#print_result(predict_val, Ytest)
 #print_data(predict_val, "test.csv")
 
 ''' Print Result '''
