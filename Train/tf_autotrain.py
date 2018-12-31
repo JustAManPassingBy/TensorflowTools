@@ -26,7 +26,7 @@ from tf_functions import cost_predictor, get_data_with_float32, print_data, get_
 tf.set_random_seed(764)
 
 # parameter
-my_learning_rate = 1e-4
+my_learning_rate = 1e-3
 my_regularization_rate = 0
 training_epochs = 500
 dataset_size = 1333
@@ -199,9 +199,9 @@ for i in range(1, total_layer - 1) :
 ''' Your hypothesis (X => Layer => Hypothesis) '''
 # set hypothesis
 # hypothesis [0.9 0.1 0.0 0.0 ...] // O.9 might be an answer
-hypothesis = tf.matmul(L, W) + B
+#hypothesis = tf.matmul(L, W) + B
 #hypothesis = tf.nn.relu(tf.matmul(L, W) + B)
-#hypothesis= tf.sigmoid(tf.matmul(L, W) + B)
+hypothesis= tf.sigmoid(tf.matmul(L, W) + B)
 #hypothesis= tf.nn.tanh(tf.matmul(L, W) + B)
 
 ''' Two, merge all history, and record '''

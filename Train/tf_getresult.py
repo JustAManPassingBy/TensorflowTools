@@ -156,3 +156,7 @@ predict_val = sess.run([hypothesis], feed_dict={X : Xtest, keep_prob: 1})
 #print("Accuracy  : " + str(print_accuracy * 100.0) + "%")
 print("--- Expecting ---")
 print(predict_val)
+
+files = open("result.txt", "w")
+files.write(str(predict_val))
+files.close()
