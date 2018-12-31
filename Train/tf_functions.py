@@ -210,11 +210,29 @@ def clipping_all_data_with_normalization(data_arr) :
 
     return data_arr
 
+def get_data_from_csv(arr, filename) :
+    file = open(filename, 'r', encoding='utf-8')
+    #csv_reader = csv.reader(file, qoutechar='"', delimiter=',', quoting=csv.QUOTE_ALL, skipinitialspace=True)
+    csv_reader = csv.reader(file)
+
+    for row in csv_reader :
+        arr.append(row)
+
+    file.close()
+
+    return arr
+    
+
 # get raw data from csv
 def get_real_data_from_csv(X_arr, filename) :
     col_count = 8
     use_col = [2, 3, 4, 6]
     use_rowid = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 18, 20, 21, 22, 23, 26, 28, 29, 30, 34, 37, 38, 39, 42]
+
+    variables = list()
+    variables = get_data_from_csv(variables, "normalize.csv")
+
+    print(len(variables))
 
     with open(filename, encoding="utf-8") as csvDataFile :
         csv_reader = csv.reader(csvDataFile)
@@ -222,7 +240,9 @@ def get_real_data_from_csv(X_arr, filename) :
         X_list = list()
 
         idx = 0
-        rowid = 0
+        rowid = 0 
+        use_idx = 0
+        use_rows = -1 # skip first line
 
         for row in csv_reader :
             for col in row :
@@ -235,8 +255,13 @@ def get_real_data_from_csv(X_arr, filename) :
                         col_item = float(col[:-1].replace(",", ""))
                     else :
                         col_item = float(col.replace(",", ""))
+                    
+                    col_replace = (col_item - float(variables[use_idx + (use_rows * len(use_col))][1]))* float(variables[use_idx + (use_rows * len(use_col))][0]) 
+                    X_list.append(col_replace)
 
-                    X_list.append(col_item)
+                    print(col_item, col_replace, variables[use_idx + (use_rows * len(use_col))][0], variables[use_idx + (use_rows * len(use_col))][1])
+
+                    use_idx += 1
 
                 if (idx == 0) and (rowid in use_rowid) :
                     print (col)
@@ -244,8 +269,12 @@ def get_real_data_from_csv(X_arr, filename) :
                 idx += 1
 
                 if (idx == col_count) :
+                    use_idx = 0
                     idx = 0
                     rowid += 1
+
+                    if (rowid in use_rowid) :
+                        use_rows += 1
 
     X_arr.append(X_list)
 

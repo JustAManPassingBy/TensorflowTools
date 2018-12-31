@@ -112,7 +112,13 @@ def clipping_all_data(data_arr, idx, savename) :
     print("valid : " + str(vitems))
 
     writer.close()
-    
+
+    ''' Make csv '''
+    with open("normalize.csv", 'w', encoding='utf-8', newline='\n') as csv_file :
+        csv_writer = csv.writer(csv_file, quotechar='"')
+
+        for each_list in divider :
+            csv_writer.writerow(each_list)    
 
     # clip : [col] matches with divider[col - 1]
     return data_arr, divider
