@@ -26,12 +26,12 @@ from tf_functions import cost_predictor, get_data_with_float32, print_data, get_
 tf.set_random_seed(764)
 
 # parameter
-my_learning_rate = 1e-3
+my_learning_rate = 1e-4
 my_regularization_rate = 0
-training_epochs = 500
-dataset_size = 1333
+training_epochs = 1000000
+dataset_size = 2
 testdata_size = 111
-batch_size = 20
+batch_size = 1
 print_interval = 100
 graph_interval = 5
 summary_interval = 10
@@ -45,7 +45,7 @@ train_file="train.txt"
 test_file="test.txt"
 
 # dropout ratio
-dropout_ratio = 0.7
+dropout_ratio = 1.0
 
 # collecting cost list size
 cost_list_size = 50
@@ -76,11 +76,11 @@ num_thread = 1
 
 ''' Layers '''
 #direct Bridge
-direct_bridge = False
+direct_bridge = True
 
 # Layer  input , layer '1' , layer '2'  ...  layer 'k' , output
 if (direct_bridge is True) :
-    layer_size=[input_arraysize, input_arraysize, 86, 72, 32, 12, output_arraysize]
+    layer_size=[input_arraysize, input_arraysize, 148, 87, 72, 32, 8, output_arraysize]
 else : 
     layer_size=[input_arraysize, 86, 72, 32, 12, output_arraysize]
 
@@ -199,9 +199,9 @@ for i in range(1, total_layer - 1) :
 ''' Your hypothesis (X => Layer => Hypothesis) '''
 # set hypothesis
 # hypothesis [0.9 0.1 0.0 0.0 ...] // O.9 might be an answer
-#hypothesis = tf.matmul(L, W) + B
+hypothesis = tf.matmul(L, W) + B
 #hypothesis = tf.nn.relu(tf.matmul(L, W) + B)
-hypothesis= tf.sigmoid(tf.matmul(L, W) + B)
+#hypothesis= tf.sigmoid(tf.matmul(L, W) + B)
 #hypothesis= tf.nn.tanh(tf.matmul(L, W) + B)
 
 ''' Two, merge all history, and record '''
