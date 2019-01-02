@@ -370,6 +370,10 @@ def get_raw_data_from_tsv (X_arr, Y_arr, filename, X_size = -1,Y_size = 1, drop_
                     # skip something number here
                     if (data_count <= 0) :
                         continue
+
+                    # test for input_array = 4
+                    #if (data_count is 7) :
+                    #    break
                     
                     col = col.replace(",", "")
                     # check date

@@ -26,9 +26,9 @@ from tf_functions import cost_predictor, get_data_with_float32, print_data, get_
 tf.set_random_seed(764)
 
 # parameter
-my_learning_rate = 1e-4
+my_learning_rate = 1e-6
 my_regularization_rate = 0
-training_epochs = 1000000
+training_epochs = 1
 dataset_size = 2
 testdata_size = 111
 batch_size = 1
@@ -80,7 +80,7 @@ direct_bridge = True
 
 # Layer  input , layer '1' , layer '2'  ...  layer 'k' , output
 if (direct_bridge is True) :
-    layer_size=[input_arraysize, input_arraysize, 148, 87, 72, 32, 8, output_arraysize]
+    layer_size=[input_arraysize, input_arraysize, 1, output_arraysize]
 else : 
     layer_size=[input_arraysize, 86, 72, 32, 12, output_arraysize]
 
@@ -194,7 +194,11 @@ else :
 
 for i in range(1, total_layer - 1) :
     whist = tf.summary.histogram("weights" + str(i), wlist[i])
-    bhist = tf.summary.histogram("bias" + str(i), blist[i])   
+
+    if (direct_bridge is True) :
+        bhist = tf.summary.histogram("bias" + str(i), blist[i - 1])
+    else :
+        bhist = tf.summary.histogram("bias" + str(i), blist[i])
 
 ''' Your hypothesis (X => Layer => Hypothesis) '''
 # set hypothesis
@@ -204,9 +208,8 @@ hypothesis = tf.matmul(L, W) + B
 #hypothesis= tf.sigmoid(tf.matmul(L, W) + B)
 #hypothesis= tf.nn.tanh(tf.matmul(L, W) + B)
 
-''' Two, merge all history, and record '''
+''' Two, merge all history '''
 hyphist = tf.summary.histogram("hypothesis", hypothesis)
-merged = tf.summary.merge_all()
 
 ''' cost : For adjust learning flow '''
 # Cost is difference between label & hypothesis(Use softmax for maximize difference
@@ -218,6 +221,11 @@ merged = tf.summary.merge_all()
 #cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=hypothesis, labels=Y)) 
 cost = tf.reduce_mean(tf.square(hypothesis - Y))
 
+''' Three, merge cost '''
+tf.summary.scalar("cost", cost)
+
+''' Record '''
+merged = tf.summary.merge_all()
 
 ''' Regularization (If want) '''
 # reqularization

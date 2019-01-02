@@ -1,0 +1,2 @@
+tensorboard --logdir=./logs/train_logs
+192.168.25.30:6006
