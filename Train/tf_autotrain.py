@@ -10,52 +10,67 @@ import time
 
 from tf_functions import cost_predictor, get_data_with_float32, print_data, get_raw_data_from_csv, get_raw_data_from_tsv, print_result, print_cost
 
-''' For Mnist Data '''
-# Collect mnist data
+''' Collect Mnist DATA '''
 #from tensorflow.examples.tutorials.mnist import input_data
 #mnist = input_data.read_data_sets("MNIST_data", one_hot=True)
 
+############### INPUT LAYER ###################
 
-## print(Array.ndim) == print rank
-## print(Array.shape) == print shape
-
-
-''' User Input '''
-######## NEEDS TO CONSIDER VARIABLES
+''' Variables '''
 # set random seed
 tf.set_random_seed(764)
 
-# parameter
-my_learning_rate = 1e-6
+# Learning Rate
+my_learning_rate = 1e-3
+
+# Regularization Rate 
 my_regularization_rate = 0
-training_epochs = 1
-dataset_size = 2
-testdata_size = 111
-batch_size = 1
-print_interval = 100
-graph_interval = 5
-summary_interval = 10
-
-# input / output size
-input_arraysize = 116
-output_arraysize = 2
-
-# input / output filenam
-train_file="train.txt"
-test_file="test.txt"
 
 # dropout ratio
 dropout_ratio = 1.0
 
-# collecting cost list size
+# training counts(epochs)
+training_epochs = 3000
+
+# number of input datasets for train
+dataset_size = 1333
+
+# number of input datasets for test
+testdata_size = 111
+
+# number of batches (data counts for training once)
+batch_size = 50
+
+# Print / Graph inverval (print cycles)
+print_interval = 100
+graph_interval = 5
+summary_interval = 10
+
+# each input data's node size
+input_arraysize = 116
+
+# each output data's node size
+output_arraysize = 2
+
+# collecting cost list size (TBD)
 cost_list_size = 50
-goal_descend_relation = int(cost_list_size / 2)
 
-# snapshot min cost (not need in dropout)
-snapshotmincost = False
 
-# printgraph
-printgraph = True
+''' files '''
+# train file name
+train_file="train.txt"
+
+# test file name
+test_file="test.txt"
+
+## save & restore variables 
+# set "NULL" if don't have it
+# Example : savepath='/tmp/model.ckpt' savepate='NULL'
+# window " , linux '
+#savepath="/tmp/model.ckpt"
+savepath = restorepath="/tmp/model.ckpt"
+#savepath = restorepath = "NULL"
+snapshotmincostpath="/tmp/minmodel.ckpt"
 
 # show costs
 showcost = True
@@ -66,6 +81,14 @@ printalllayer = True
 # set stdout if you want to get results with standard output
 printalllayer_filename = "alllayer.txt"
 
+
+''' options '''
+# snapshot min cost (not need in dropout)
+snapshotmincost = False
+
+# printgraph
+printgraph = True
+
 # variable learning rate
 my_initial_learning_rate=1e-3
 decay_steps = 100000
@@ -74,33 +97,27 @@ decay_rate = 0.98
 # thread
 num_thread = 1
 
+
 ''' Layers '''
 #direct Bridge
 direct_bridge = True
 
 # Layer  input , layer '1' , layer '2'  ...  layer 'k' , output
 if (direct_bridge is True) :
-    layer_size=[input_arraysize, input_arraysize, 1, output_arraysize]
+    layer_size=[input_arraysize, input_arraysize,86, 72, 32, 13, output_arraysize]
 else : 
     layer_size=[input_arraysize, 86, 72, 32, 12, output_arraysize]
 
-''' save & restore variables '''
-# set "NULL" if don't have it
-# Example : savepath='/tmp/model.ckpt' savepate='NULL'
-# window " , linux '
-#savepath="/tmp/model.ckpt"
-savepath = restorepath="/tmp/model.ckpt"
-#savepath = restorepath = "NULL"
-snapshotmincostpath="/tmp/minmodel.ckpt"
+############### PROGRAM LAYER ###################
 
-######## END OF CONSIDER VARIABLES
-######################################################
 ''' Check Validity '''
 # check direct bridge
 if (direct_bridge is True) and (input_arraysize != layer_size[1]) :
     print("Error : In direct bridge, first hidden layer size is same with input layer")
     print("Input : " + str(input_arraysize) + " / Hidden : " + str(layer_size[1]))
     exit
+
+goal_descend_relation = int(cost_list_size / 2)
  
 # dropout probability variable
 keep_prob = tf.placeholder(tf.float64)
@@ -112,14 +129,13 @@ if total_layer <= 1 :
     print(total_layer + "Your layer is too small XD")
     exit
 
-#total_batch = int(mnist.train.num_examples / batch_size)
+#total_batch = int(mnist.train.num_examples / batch_size) // for mnist
 total_batch = int(dataset_size / batch_size)
-
-#if (dataset_size % batch_size) != 0 :
-#    total_batch += 1
 
 list_for_auto_control = list()
 
+
+''' Create tensorflow sess, variables, input_data '''
 # get session
 sess = tf.InteractiveSession()
 
@@ -127,22 +143,28 @@ sess = tf.InteractiveSession()
 X = tf.placeholder(tf.float64, [None, layer_size[0]])
 Y = tf.placeholder(tf.float64, [None, layer_size[total_layer - 1]])
 
+
 ''' Make & Get array for train data '''
-# collect input data
+# Make list
 Xarr = list()
 Yarr = list()
+
+# collect input data
 #Xarr, Yarr = get_raw_data_from_csv(Xarr, Yarr, "America_NASDAQ.csv", drop_yarr = False, skipfirstline = True)
 Xarr, Yarr = get_raw_data_from_tsv(Xarr, Yarr, train_file, X_size = dataset_size, Y_size = 2, drop_yarr = False, skipfirstline = False)
 
-# From Input data, create Batch(Slice of train data)
+# create Batches(Slice of train data)
+## Normal batch
 #X_batches, Y_batches = tf.train.batch([Xarr, Yarr], batch_size=batch_size, enqueue_many=True, allow_smaller_final_batch=True)
-# Random batch
+## Random batch
 num_min = num_thread * dataset_size
 X_batches, Y_batches = tf.train.shuffle_batch([Xarr, Yarr], enqueue_many=True, batch_size=batch_size, capacity = (num_thread + 2) * num_min , min_after_dequeue=(num_min), allow_smaller_final_batch=True)
+
 
 ''' Variable for Dynamically change learning rate '''
 #global_step = tf.Variable(0, trainable=False)
 #my_learning_rate = tf.train.exponential_decay(my_initial_learning_rate, global_step, decay_steps * total_batch, decay_rate, staircase=True)
+
 
 ''' Setting Layer '''
 # list for tensor
@@ -185,6 +207,7 @@ for i in range(0, total_layer - 1) :
 
     PREVL = L
 
+
 ''' histogram_summay '''
 if (direct_bridge is False) :
     whist = tf.summary.histogram("weights" + "0", wlist[0])
@@ -200,6 +223,7 @@ for i in range(1, total_layer - 1) :
     else :
         bhist = tf.summary.histogram("bias" + str(i), blist[i])
 
+
 ''' Your hypothesis (X => Layer => Hypothesis) '''
 # set hypothesis
 # hypothesis [0.9 0.1 0.0 0.0 ...] // O.9 might be an answer
@@ -208,10 +232,12 @@ hypothesis = tf.matmul(L, W) + B
 #hypothesis= tf.sigmoid(tf.matmul(L, W) + B)
 #hypothesis= tf.nn.tanh(tf.matmul(L, W) + B)
 
-''' Two, merge all history '''
+
+''' Add hypothesis histogram '''
 hyphist = tf.summary.histogram("hypothesis", hypothesis)
 
-''' cost : For adjust learning flow '''
+
+''' cost : Differences between hypothesis and Y '''
 # Cost is difference between label & hypothesis(Use softmax for maximize difference
 # [0.9 0.1 0.0 0.0 ...] ===(softmax)==> [1 0 0 0 ...] (Soft max is empthsize special answer)
 # Square = {for all X in [X], init M = 0 , M += (WX - Y)^2 , finally M /= sizeof([X]) 
@@ -221,17 +247,21 @@ hyphist = tf.summary.histogram("hypothesis", hypothesis)
 #cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=hypothesis, labels=Y)) 
 cost = tf.reduce_mean(tf.square(hypothesis - Y))
 
-''' Three, merge cost '''
+
+''' Record cost '''
 tf.summary.scalar("cost", cost)
 
-''' Record '''
+
+''' create output for tensorboard '''
 merged = tf.summary.merge_all()
+
 
 ''' Regularization (If want) '''
 # reqularization
 l2reg = my_regularization_rate * tf.reduce_mean(tf.square(W))
 
-''' Optimizer (Calculate Gradient) '''
+
+''' Optimizer (Ways for training) '''
 # define optimzer : To minimize cost / with learning rate / Use adam optimizer
 # https://smist08.wordpress.com/tag/adam-optimizer/ For find more optimizer
 # http://shuuki4.github.io/deep%20learning/2016/05/20/Gradient-Descent-Algorithm-Overview.html
@@ -239,10 +269,12 @@ optimizer = tf.train.AdamOptimizer(learning_rate=my_learning_rate, beta1=0.9, be
 #optimizer = tf.train.AdamOptimizer(learning_rate=my_learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-8).minimize((cost - l2reg), global_step=global_step)
 #optimizer = tf.train.GradientDescentOptimizer(learning_rate=my_learning_rate).minimize(cost - l2reg)
 
+
 ''' Restore Process '''
 # saver
 saver = tf.train.Saver()
 writer = tf.summary.FileWriter("./logs/train_logs", sess.graph)
+
 
 ''' Graph information'''
 if (printgraph is True) :
@@ -273,23 +305,24 @@ else :
     else :
         print ("restore done")
 
-''' Setting for Tensorflow '''
+
+''' Prepare training '''
 # coordinate
 coord = tf.train.Coordinator()
 threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
 min_cost = float(4294967296)
 
+
 ''' Train Model '''
 for epoch in range(training_epochs):
     avg_cost = 0
 
+    # Each epoch trains amount of total batch (num_input_data / num_batches) 
     for i in range(0, total_batch) :
         # add info into batch count
         X_batch, Y_batch = sess.run([X_batches, Y_batches])
-
-        # For mnist
-        #X_batch, Y_batch = mnist.train.next_batch(batch_size)
+        #X_batch, Y_batch = mnist.train.next_batch(batch_size) # for mnist
 
         feed_dict = {X: X_batch, Y: Y_batch, keep_prob: dropout_ratio}
         c, merge_result, _ = sess.run([cost, merged, optimizer], feed_dict=feed_dict)
@@ -301,30 +334,32 @@ for epoch in range(training_epochs):
         if (snapshotmincost is True) and (snapshotmincostpath != "NULL") :
             saver.save(sess, snapshotmincostpath)
 
+    # Print & Save cost
     if (epoch % print_interval) == 0 :
         print('Epoch' , '{:7d}'.format(epoch), 'done. Cost :', '{:.9f}'.format(avg_cost))
-        #print(sess.run(my_learning_rate))
-        #print(sess.run(global_step))
-        #tf.Print(hypothesis, [hypothesis])
 
         if savepath != "NULL" :
             saver.save(sess, savepath)
 
         saver.save(sess, "tmp/tem_save")
 
+    # Save variables for graph
     if (printgraph is True) and (epoch % graph_interval) == 0 :
         Xgraph.append(epoch)
         Ygraph.append(avg_cost)
 
+    # for summary interval
     if (epoch % summary_interval) == 0 :
         writer.add_summary(merge_result, epoch)
 
 coord.request_stop()
 coord.join(threads)
 
+# Learing end
 print("Learning Done")
 
-''' Save if savepath exits '''
+
+''' Save results if savepath exits '''
 if savepath != "NULL" :
     saver.save(sess, savepath)
     print("save done")
@@ -334,32 +369,38 @@ if savepath != "NULL" :
 Xtest = list()
 Ytest = list()
 
-# Ytest values are filled with dummy data (float(1.0)) 
 #Xtest, Ytest = get_raw_data_from_csv(Xtest, Ytest, "America_NASDAQ.csv", drop_yarr = True, skipfirstline = True)
 Xtest, Ytest = get_raw_data_from_tsv(Xtest, Ytest, test_file, X_size = testdata_size,Y_size = 2, drop_yarr = False, skipfirstline = False)
 
+
 ''' Test values '''
+# Adjust correct prediction (set standards whether train result is same with expects)
 correct_prediction = tf.equal(tf.argmax(hypothesis, 1), tf.argmax(Y, 1))
 #correct_prediction = tf.equal(hypothesis, Y)
 #correct_prediction = tf.square(hypothesis -  Y)
 
+# calculate Accuracy
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float64))
 #accuracy = tf.reduce_mean(correct_prediction)
 
-''' Check result '''
+
+''' Check result with train session feeded with test values '''
 # sess.run([Output formats(hypothesis, Y)], feed_dictionary(see below)
 print_accuracy, predict_val, _ = sess.run([accuracy, hypothesis, Y], feed_dict={X : Xtest, Y : Ytest, keep_prob: 1})
 #print('Accuracy:', sess.run(accuracy, feed_dict={ X: mnist.test.images, Y: mnist.test.labels}))
 
-''' Print result '''
+
+''' Print result (TBD) ''' 
 # Todo : Synchronize with output
 #print(PRINTW.eval())
+
 
 ''' Create output '''
 #print("Min value : " + str(min_cost) + " (Save : " + str(snapshotmincost) + ")")
 print("Accuracy  : " + str(print_accuracy * 100.0) + "%")
-#print_result(predict_val, Ytest)
+print_result(predict_val, Ytest)
 #print_data(predict_val, "test.csv")
+
 
 ''' Print Result '''
 if (printalllayer is True) :
@@ -384,11 +425,17 @@ if (printalllayer is True) :
         else :           
             print(sess.run(blist[i]))
     sys.stdout = origin_stdout
+
+
+''' Print Cost '''
+if (showcost is True) :
+    print_cost(Xgraph, Ygraph, showcost_filename) 
+
     
 ''' Print Graph (Should be last) '''
 if (printgraph is True) :
     plt.plot(Xgraph, Ygraph)
     plt.show()
 
-if (showcost is True) :
-    print_cost(Xgraph, Ygraph, showcost_filename) 
+
+''' End '''
