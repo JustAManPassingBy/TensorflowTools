@@ -52,12 +52,14 @@ def cost_predictor(new_input, list_input, cur_learning_rate, input_list, num_des
     return 1
 # End of function
 
+
 # Function get_data
 # num_of_data_set : data set
 # X_filename  : input_filename
 # X_size      : number of input with float 32
 # Y_filename  : output_filename
 # Y_size      : number of output with float 32
+# X_arr, Y_arr: arrays that save given x, y data 
 # Warning :: This function does not gurantee parameter is matched perfectly or num_of_data_set is matched with files
 # V 1.01 -> Add case that each data's line includes space(" ") in end (ex : "1.0 1.0 ")
 def get_data_with_float32(num_of_data_set, X_filename, X_size, Y_filename, Y_size, X_arr, Y_arr) :
@@ -90,6 +92,12 @@ def get_data_with_float32(num_of_data_set, X_filename, X_size, Y_filename, Y_siz
     return X_arr, Y_arr
 # End of function
 
+
+# Print costs
+# Get arrays of training epochs and each step's cost
+# Save it onto file name
+# epoch_array, cost_array : array for epoch, cost [Notice : function only consider epoch's array length]
+# filename                : location that two relations will be saved
 def print_cost(epoch_array, cost_array, filename) :
     showcostfile = open(filename, "w")
 
@@ -102,6 +110,8 @@ def print_cost(epoch_array, cost_array, filename) :
     showcostfile.close()
 
     return
+# End of function
+
 
 # Function print
 # X        : Array that want to make for output file
@@ -114,7 +124,13 @@ def print_data(X, filename) :
             writer.writerow(item)
 
     csvDataFile.close()
+# End of function
 
+
+# Print result function
+# Print relation between expected value(X) and real value(Y) in stdout
+# X : expected value's array
+# Y : real value's array
 def print_result(X, Y) :
     row = max(len(X), len(Y))
     col_X = len(X[0])
@@ -145,9 +161,13 @@ def print_result(X, Y) :
 
 
     print("Accuracy with p/m : " + str(float(correct) / float(item) * 100.0))
+# End of function
         
 
-# clipping data with range between 0 ~ 1)
+# clipping data with specific range
+# data_arr : data array for clipping
+# 1. Y = X * k (-t ~ t)
+# 2. Y = (X - min_value) * k (0 ~ t)
 def clipping_all_data(data_arr) :
     num_row = len(data_arr)
     num_col = len(data_arr[0])
@@ -177,7 +197,11 @@ def clipping_all_data(data_arr) :
     print("cliping data with row x col :: " + str(num_row) + " x " + str(num_col)) 
 
     return data_arr
+# End of function
 
+
+# clipping data that satisfy statistic values (average : 0.5 , std_dev : 0.5
+# data_arr : data array for clipping in normalization
 def clipping_all_data_with_normalization(data_arr) :
     num_row = len(data_arr)
     num_col = len(data_arr[0])
@@ -209,7 +233,13 @@ def clipping_all_data_with_normalization(data_arr) :
     print("mean : " + str(target_mean) + " // std_dev : " + str(target_std_dev))
 
     return data_arr
+# End of function
 
+
+# Get real data from csv
+# You can use this function
+# X_arr    : data will saved in this array
+# filename : filename for reading data
 def get_data_from_csv(arr, filename) :
     file = open(filename, 'r', encoding='utf-8')
     #csv_reader = csv.reader(file, qoutechar='"', delimiter=',', quoting=csv.QUOTE_ALL, skipinitialspace=True)
@@ -221,9 +251,13 @@ def get_data_from_csv(arr, filename) :
     file.close()
 
     return arr
-    
+# End of function
 
-# get raw data from csv
+
+# Get real data from csv
+# You can use this function
+# X_arr    : data will saved in this array
+# filename : filename for reading data
 def get_real_data_from_csv(X_arr, filename) :
     col_count = 8
     use_col = [2, 3, 4, 6]
@@ -279,6 +313,7 @@ def get_real_data_from_csv(X_arr, filename) :
     X_arr.append(X_list)
 
     return X_arr
+# End of function
                     
 
 # Get data from csv
@@ -345,6 +380,8 @@ def get_raw_data_from_csv (X_arr, Y_arr, filename, drop_yarr = False, skipfirstl
     #X_arr = clipping_all_data(X_arr)
 
     return X_arr, Y_arr
+# End of function
+
 
 # Get data from tsv
 # in train data, you have to write X_arr, Y_arr
@@ -407,9 +444,11 @@ def get_raw_data_from_tsv (X_arr, Y_arr, filename, X_size = -1,Y_size = 1, drop_
                     Y_arr.append(tem_arr)    
                 else :
                     tem_arr = list()
-                    tem_arr.append(float(1.0))
-                    Y_arr.append(tem_arr)
 
+                    for repeat in range (0, Y_size) :
+                        tem_arr.append(float(1.0))
+                        
+                    Y_arr.append(tem_arr)
 
                 # add X_arr
                 X_arr.append(row_items)

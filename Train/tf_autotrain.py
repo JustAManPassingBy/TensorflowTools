@@ -21,7 +21,7 @@ from tf_functions import cost_predictor, get_data_with_float32, print_data, get_
 tf.set_random_seed(764)
 
 # Learning Rate
-my_learning_rate = 1e-3
+my_learning_rate = 1e-4
 
 # Regularization Rate 
 my_regularization_rate = 0
@@ -30,16 +30,16 @@ my_regularization_rate = 0
 dropout_ratio = 1.0
 
 # training counts(epochs)
-training_epochs = 3000
+training_epochs = 100
 
 # number of input datasets for train
-dataset_size = 1333
+dataset_size = 51
 
 # number of input datasets for test
-testdata_size = 111
+testdata_size = 28
 
 # number of batches (data counts for training once)
-batch_size = 50
+batch_size = 20
 
 # Print / Graph inverval (print cycles)
 print_interval = 100
@@ -47,7 +47,7 @@ graph_interval = 5
 summary_interval = 10
 
 # each input data's node size
-input_arraysize = 116
+input_arraysize = 28
 
 # each output data's node size
 output_arraysize = 2
@@ -58,10 +58,10 @@ cost_list_size = 50
 
 ''' files '''
 # train file name
-train_file="train.txt"
+train_file="trend.txt"
 
 # test file name
-test_file="test.txt"
+test_file="checktrend.txt"
 
 ## save & restore variables 
 # set "NULL" if don't have it
@@ -100,13 +100,13 @@ num_thread = 1
 
 ''' Layers '''
 #direct Bridge
-direct_bridge = True
+direct_bridge = False
 
 # Layer  input , layer '1' , layer '2'  ...  layer 'k' , output
 if (direct_bridge is True) :
     layer_size=[input_arraysize, input_arraysize,86, 72, 32, 13, output_arraysize]
 else : 
-    layer_size=[input_arraysize, 86, 72, 32, 12, output_arraysize]
+    layer_size=[input_arraysize, 238, 86, 72, 32, 15, output_arraysize]
 
 ############### PROGRAM LAYER ###################
 
@@ -370,8 +370,9 @@ Xtest = list()
 Ytest = list()
 
 #Xtest, Ytest = get_raw_data_from_csv(Xtest, Ytest, "America_NASDAQ.csv", drop_yarr = True, skipfirstline = True)
-Xtest, Ytest = get_raw_data_from_tsv(Xtest, Ytest, test_file, X_size = testdata_size,Y_size = 2, drop_yarr = False, skipfirstline = False)
+Xtest, Ytest = get_raw_data_from_tsv(Xtest, Ytest, test_file, X_size = testdata_size,Y_size = 2, drop_yarr = True, skipfirstline = False)
 
+print (len(Xtest), len(Xtest[0]), len(Ytest[0]), len(Ytest))
 
 ''' Test values '''
 # Adjust correct prediction (set standards whether train result is same with expects)
