@@ -2,6 +2,50 @@ import numpy as np
 import datetime
 import csv
 
+def get_google_data_from_csv_file(prev_list, filename, original_item_num) :
+    with open(filename, encoding="utf-8") as csvDataFile:
+    #with open(filename) as csvDataFile:
+        csv_reader = csv.reader(csvDataFile)
+
+        for row in csv_reader :            
+            item_count = 0
+            
+            for col in row :
+                item_count += 1
+
+                # date info
+                if (item_count == 1) :
+                    my_date = datetime.datetime.strptime(col, "%Y년 %m월 %d일")
+
+                    skip_row = True
+                        
+                    for list_item in prev_list :
+                        if (my_date in list_item) :
+                            target_list = list_item
+                            skip_row = False
+                            break
+                
+                    if (skip_row is True) :
+                        break
+
+                # else
+                col = col.replace(",","")
+
+                 # check data type
+                if (len(col) < 1) :
+                    col_item = float(0.0)
+                elif (col[-1].isdigit()) is False :
+                    col_item = float(col[:-1])
+                else :
+                    col_item = float(col)
+
+                # add list
+                target_list.append(col_item)
+
+                original_item_num += 1
+            
+    return original_item_num
+
 def get_data_from_csv_file (prev_list, filename, isfirst = False) :
     skipfirstline = True
     
@@ -139,15 +183,12 @@ def make_data (data_list, startdate, enddate, filename, output_count, num_data, 
         # Maybe write first line (if you want)
         
         for each_list in data_list :
-            # check omit data
-            if (len(each_list) < total_index) : continue
-
             # check date
-            if ((each_list[0] > startdate) is False) or ((enddate > each_list[0]) is False) :
+            if ((each_list[0] >= startdate) is False) or ((enddate >= each_list[0]) is False) :
                 prev_list = each_list
                 continue
 
-            if ((prev_list[0] > startdate) is False) or ((enddate > prev_list[0]) is False) :
+            elif ((prev_list[0] >= startdate) is False) or ((enddate >= prev_list[0]) is False) :
                 #prev_prev_list = prev_list
                 prev_list = each_list
                 continue
@@ -156,6 +197,9 @@ def make_data (data_list, startdate, enddate, filename, output_count, num_data, 
                 #prev_prev_list = prev_list
                 #prev_list = each_list
                 #continue
+
+            # check omit data
+            if (len(each_list) < total_index) : continue
 
             total_item += 1
 
@@ -171,10 +215,10 @@ def make_data (data_list, startdate, enddate, filename, output_count, num_data, 
                 #    my_file.write("0.0\t")
 
             # output write
-            for i in range(104, 105) :
+            for i in range(total_index, total_index + 1) :
                 # idx 104 matches with multiple_data[103], 0 multipler, 1 cur_min
                 # restore = (X / multipler) + cur_min
-                if (((each_list[i] / multiple_data[103][0]) + multiple_data[103][1]) > 0) :
+                if ((each_list[i] / multiple_data) > 0) :
                     row_array.append(float(1.0))
                     row_array.append(float(0.0))
                 else :
@@ -202,16 +246,21 @@ def make_data (data_list, startdate, enddate, filename, output_count, num_data, 
 datalist = list()
 
 # date info
-num_datas = 1
+prev_num_datas = 1
 
+# muldata = 1
+muldata = 100
+
+get_data_from_csv_file(datalist, "다우존스 내역.csv", isfirst = True) # 1
+num_datas = get_google_data_from_csv_file(datalist, "trend_data.csv", prev_num_datas)
+
+'''
 # multiple(row item)
 multiple = 4
 
 # 0 : date
 # (n - 1) * 4 + 1 ~ (n) * 4
 
-''' Array with investing.com data '''
-get_data_from_csv_file(datalist, "다우존스 내역.csv", isfirst = True) # 1
 get_data_from_csv_file(datalist, "S&P 500 내역.csv")
 get_data_from_csv_file(datalist, "나스닥 내역.csv")
 get_data_from_csv_file(datalist, "Russell 2000 내역.csv")
@@ -255,7 +304,7 @@ print("read 1.9 done")
 
 datalist, muldata = clipping_all_data(datalist, num_datas, "item data.txt")
 
-'''
+
 # 1.1
 get_data_from_csv_file(datalist, "ITALY.csv", isfirst = True)
 get_data_from_csv_file(datalist, "TA 35 내역.csv")

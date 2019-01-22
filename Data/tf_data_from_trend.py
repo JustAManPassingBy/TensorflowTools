@@ -109,8 +109,7 @@ def get_all_pytrend_infos(initlist, keyword, catinfo, suggestion_id, original_is
         print("Act : " + str(i) + " Done!")
 
         # We need time interval between getting pytrend info, so that avoid blocking from GOOGLE.
-        time.sleep(10)
-        time.sleep(random.randrange(0, 30))
+        time.sleep(random.randrange(30, 60))
 
     return initlist
 
