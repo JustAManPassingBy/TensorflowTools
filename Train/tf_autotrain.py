@@ -17,16 +17,12 @@ from tf_functions import cost_predictor, get_data_with_float32, print_data, get_
 ############### INPUT LAYER ###################
 
 ''' Variables '''
-# set random seed
 tf.set_random_seed(764)
 
-# Learning Rate
 my_learning_rate = 1e-4
 
-# Regularization Rate 
 my_regularization_rate = 0
 
-# dropout ratio
 dropout_ratio = 1.0
 
 # training counts(epochs)

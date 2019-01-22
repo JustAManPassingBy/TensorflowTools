@@ -72,22 +72,23 @@ def clipping_all_data(data_arr, idx, savename) :
     
     # skip time
     for col in range(1, num_col) :
-        cur_max = -2000000000
-        cur_min = 2000000000
+        #cur_max = -2000000000
+        #cur_min = 2000000000
         #cur_max_abs = 0 
 
-        for row in range(0, num_row) :
-            if (len(data_arr[row]) != idx) :
-                continue
+        #for row in range(0, num_row) :
+        #    if (len(data_arr[row]) != idx) :
+        #        continue
             
-            if (data_arr[row][col] > cur_max) :
-               cur_max = data_arr[row][col]
-            if (data_arr[row][col] < cur_min) :
-                cur_min = data_arr[row][col]
+        #    if (data_arr[row][col] > cur_max) :
+        #       cur_max = data_arr[row][col]
+        #    if (data_arr[row][col] < cur_min) :
+        #        cur_min = data_arr[row][col]
             #if (cur_max_abs < abs(data_arr[row][col])) :
             #    cur_max_abs = abs(data_arr[row][col])
 
-        multipler = (1.0 / float(cur_max - cur_min))
+        multipler = 1.0 / 100.0
+        cur_min = 0
         #multipler = (5.0 / float(cur_max_abs))
 
         vitems = 0
