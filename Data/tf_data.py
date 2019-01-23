@@ -28,21 +28,22 @@ def get_google_data_from_csv_file(prev_list, filename, original_item_num) :
                     if (skip_row is True) :
                         break
 
-                # else
-                col = col.replace(",","")
-
-                 # check data type
-                if (len(col) < 1) :
-                    col_item = float(0.0)
-                elif (col[-1].isdigit()) is False :
-                    col_item = float(col[:-1])
                 else :
-                    col_item = float(col)
+                    # else
+                    col = col.replace(",","")
 
-                # add list
-                target_list.append(col_item)
+                     # check data type
+                    if (len(col) < 1) :
+                        col_item = float(0.0)
+                    elif (col[-1].isdigit()) is False :
+                        col_item = float(col[:-1])
+                    else :
+                        col_item = float(col)
 
-                original_item_num += 1
+                    # add list
+                    target_list.append(col_item)
+
+                    original_item_num += 1
             
     return original_item_num
 
@@ -83,7 +84,8 @@ def get_data_from_csv_file (prev_list, filename, isfirst = False) :
                     break
 
                 # else if count >= 7
-                if (item_count != 1) and  (item_count != 3) and (item_count != 6) :
+                #if (item_count != 1) and  (item_count != 3) and (item_count != 6) :
+                if (item_count is 7) :
                     col = col.replace(",","")
 
                     # check data type
@@ -215,7 +217,7 @@ def make_data (data_list, startdate, enddate, filename, output_count, num_data, 
                 #    my_file.write("0.0\t")
 
             # output write
-            for i in range(total_index, total_index + 1) :
+            for i in range(total_index, total_index + output_count) :
                 # idx 104 matches with multiple_data[103], 0 multipler, 1 cur_min
                 # restore = (X / multipler) + cur_min
                 if ((each_list[i] / multiple_data) > 0) :
@@ -245,11 +247,12 @@ def make_data (data_list, startdate, enddate, filename, output_count, num_data, 
 
 datalist = list()
 
-# date info
+# num_datas
 prev_num_datas = 1
 
-# muldata = 1
 muldata = 100
+
+output_loop = 1
 
 get_data_from_csv_file(datalist, "다우존스 내역.csv", isfirst = True) # 1
 num_datas = get_google_data_from_csv_file(datalist, "trend_data.csv", prev_num_datas)
@@ -358,11 +361,11 @@ print("read 1.9 done")
 my_start_date = datetime.datetime.strptime("2007년 01월 01일", "%Y년 %m월 %d일")
 my_end_date = datetime.datetime.strptime("2017년 12월 31일", "%Y년 %m월 %d일")
 
-make_data(datalist, my_start_date, my_end_date, "train.txt", 1, num_datas, muldata)
+make_data(datalist, my_start_date, my_end_date, "train.txt", output_loop, num_datas, muldata)
 print("train data make done")
 
 my_test_start_date = datetime.datetime.strptime("2018년 01월 01일", "%Y년 %m월 %d일")
 my_test_end_date = datetime.datetime.strptime("2018년 12월 6일", "%Y년 %m월 %d일")
 
-make_data(datalist, my_test_start_date, my_test_end_date, "test.txt", 1, num_datas, muldata)
+make_data(datalist, my_test_start_date, my_test_end_date, "test.txt", output_loop, num_datas, muldata)
 print("test data make done")
