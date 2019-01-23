@@ -78,8 +78,50 @@ def get_pytrend_info(initlist, startdate, enddate, keyword, catinfo, suggestion_
 
     return initlist
 
+def write_all_list_in_csv(writelist, filename) :
+    with open(filename, 'w', encoding='utf-8', newline='\n') as csv_file :
+        csv_writer = csv.writer(csv_file)
+
+        for item in writelist :
+            # Change datetime struct to Korean date display method
+            item[0] = item[0].strftime("%Y년 %m월 %d일")
+            
+            csv_writer.writerow(item)
+
+    return
+
+def restore_all_list_from_csv(prevlist, filename, isfirst = False) :
+    if (len(prevlist) != 0) or (isfirst is True) :
+        return
+
+    with open(filename, 'w', encoding='utf-8', newline='\n') as csv_file :
+        csv_reader = csv.reader(csv_file)
+
+        for row in csv_reader :
+            row_items = list()
+                
+            for col in row :
+                col = col.replace(",", "")
+                # check date
+                if ("-" in col) and (":" in col) :
+                    col_item = datetime.datetime.strptime(col, "%Y년 %m월 %d일")
+                # check empty
+                elif (col == "") :
+                    col_item = float(0)
+                # skip last item
+                elif (col[-1].isdigit()) is False :
+                    col_item = float(col[:-1])
+                else :
+                    col_item = float(col)
+                    
+                row_items.append(col_item)      
+            
+            prevlist.append(row_items)
+
+    return
+
 def get_all_pytrend_infos(initlist, keyword, catinfo, suggestion_id, original_isfirst = False) :
-    restore_all_list_from_csv(writelist, "backup.csv")
+    restore_all_list_from_csv(initlist, "backup.csv", original_isfirst)
     
     # (each repeat count gets 6 month datas)
     repeat_count = 2 * 12
@@ -116,48 +158,6 @@ def get_all_pytrend_infos(initlist, keyword, catinfo, suggestion_id, original_is
     write_all_list_in_csv(writelist, "backup.csv")
 
     return initlist
-
-def write_all_list_in_csv(writelist, filename) :
-    with open(filename, 'w', encoding='utf-8', newline='\n') as csv_file :
-        csv_writer = csv.writer(csv_file)
-
-        for item in writelist :
-            # Change datetime struct to Korean date display method
-            item[0] = item[0].strftime("%Y년 %m월 %d일")
-            
-            csv_writer.writerow(item)
-
-    return
-
-def restore_all_list_in_csv(prevlist, filename) :
-    if (len(prevlist) is 0) or (len(prevlist[0]) is 0) :
-        return
-
-    with open(filename, 'w', encoding='utf-8', newline='\n') as csv_file :
-        csv_writer = csv.reader(csv_file)
-
-        for row in csv_reader :
-            row_items = list()
-                
-            for col in row :
-                col = col.replace(",", "")
-                # check date
-                if ("-" in col) and (":" in col) :
-                    col_item = datetime.datetime.strptime(col, "%Y년 %m월 %d일")
-                # check empty
-                elif (col == "") :
-                    col_item = float(0)
-                # skip last item
-                elif (col[-1].isdigit()) is False :
-                    col_item = float(col[:-1])
-                else :
-                    col_item = float(col)
-                    
-                row_items.append(col_item)      
-            
-            prevlist.append(row_items)
-
-    return
 
 def show_list_of_keyword(keyword) :
     #pytrends = TrendReq(hl='en-US',tz=360)
