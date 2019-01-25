@@ -84,10 +84,12 @@ def write_all_list_in_csv(writelist, filename) :
 
         for item in writelist :
             # Change datetime struct to Korean date display method
-            item[0] = item[0].strftime("%Y년 %m월 %d일")
+            item[0] = str(item[0])
             
             csv_writer.writerow(item)
 
+    csv_file.close()
+    
     return
 
 def restore_all_list_from_csv(prevlist, filename, isfirst = False) :
@@ -121,7 +123,7 @@ def restore_all_list_from_csv(prevlist, filename, isfirst = False) :
     return
 
 def get_all_pytrend_infos(initlist, keyword, catinfo, suggestion_id, original_isfirst = False) :
-    restore_all_list_from_csv(initlist, "backup.csv", original_isfirst)
+    #restore_all_list_from_csv(initlist, "backup.csv", original_isfirst)
     
     # (each repeat count gets 6 month datas)
     repeat_count = 2 * 12
@@ -155,7 +157,7 @@ def get_all_pytrend_infos(initlist, keyword, catinfo, suggestion_id, original_is
         # We need time interval between getting pytrend info, so that avoid blocking from GOOGLE.
         time.sleep(random.randrange(30, 60))
 
-    write_all_list_in_csv(writelist, "backup.csv")
+    write_all_list_in_csv(initlist, "backup_" + str(len(initlist[0]) - 1) + ".csv")
 
     return initlist
 
