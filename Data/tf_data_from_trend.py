@@ -88,8 +88,6 @@ def write_all_list_in_csv(writelist, filename) :
             
             csv_writer.writerow(item)
 
-    csv_file.close()
-    
     return
 
 def restore_all_list_from_csv(prevlist, filename, isfirst = False) :
@@ -157,7 +155,7 @@ def get_all_pytrend_infos(initlist, keyword, catinfo, suggestion_id, original_is
         # We need time interval between getting pytrend info, so that avoid blocking from GOOGLE.
         time.sleep(random.randrange(30, 60))
 
-    write_all_list_in_csv(initlist, "backup_" + str(len(initlist[0]) - 1) + ".csv")
+    write_all_list_in_csv(initlist, "backup.csv")
 
     return initlist
 
