@@ -52,7 +52,7 @@ def get_pytrend_info(initlist, startdate, enddate, keyword, catinfo, suggestion_
     data_list = np.flipud(data_list)
 
     end_date = datetime.datetime.strptime(enddate, "%Y-%m-%d")
-    decrease_date =datetime.timedelta(days = 1)
+    decrease_date = datetime.timedelta(days = 1)
 
     for data in data_list :
         if (isfirst is True) :
@@ -83,9 +83,6 @@ def write_all_list_in_csv(writelist, filename) :
         csv_writer = csv.writer(csv_file)
 
         for item in writelist :
-            # Change datetime struct to Korean date display method
-            item[0] = str(item[0])
-            
             csv_writer.writerow(item)
 
     return
@@ -120,7 +117,7 @@ def restore_all_list_from_csv(prevlist, filename, isfirst = False) :
 
     return
 
-def get_all_pytrend_infos(initlist, keyword, catinfo, suggestion_id, original_isfirst = False) :
+def get_all_pytrend_infos(initlist, keyword, catinfo, suggestion_id, call_count, original_isfirst = False) :
     #restore_all_list_from_csv(initlist, "backup.csv", original_isfirst)
     
     # (each repeat count gets 6 month datas)
@@ -155,9 +152,11 @@ def get_all_pytrend_infos(initlist, keyword, catinfo, suggestion_id, original_is
         # We need time interval between getting pytrend info, so that avoid blocking from GOOGLE.
         time.sleep(random.randrange(30, 60))
 
-    write_all_list_in_csv(initlist, "backup.csv")
+    print(initlist[0], len(initlist))
+    
+    write_all_list_in_csv(initlist, "backup_" + str(call_count) + ".csv")
 
-    return initlist
+    return initlist, (call_count + 1)
 
 def show_list_of_keyword(keyword) :
     #pytrends = TrendReq(hl='en-US',tz=360)
@@ -176,70 +175,71 @@ def show_list_of_keyword(keyword) :
     
 
 newlist = list()
+call = 0
 
 # 1
-newlist = get_all_pytrend_infos(newlist, ["주가"], 0, 0, original_isfirst = True)
-newlist = get_all_pytrend_infos(newlist, ["주식"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["상승"], 0, -1)
-newlist = get_all_pytrend_infos(newlist, ["하락"], 0, -1)
-newlist = get_all_pytrend_infos(newlist, ["전망"], 0, -1)
+newlist, call = get_all_pytrend_infos(newlist, ["주가"], 0, 0, call, original_isfirst = True)
+newlist, call = get_all_pytrend_infos(newlist, ["주식"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["상승"], 0, -1, call)
+newlist, call = get_all_pytrend_infos(newlist, ["하락"], 0, -1, call)
+newlist, call = get_all_pytrend_infos(newlist, ["전망"], 0, -1, call)
 
-newlist = get_all_pytrend_infos(newlist, ["예측"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["보고서"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["낙관"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["비관"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["긍정"], 0, -1)
+newlist, call = get_all_pytrend_infos(newlist, ["예측"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["보고서"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["낙관"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["비관"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["긍정"], 0, -1, call)
 
 # 11
-newlist = get_all_pytrend_infos(newlist, ["부정"], 0, -1)
-newlist = get_all_pytrend_infos(newlist, ["미래"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["기대"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["실망"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["걱정"], 0, 0)
+newlist, call = get_all_pytrend_infos(newlist, ["부정"], 0, -1, call)
+newlist, call = get_all_pytrend_infos(newlist, ["미래"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["기대"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["실망"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["걱정"], 0, 0, call)
 
-newlist = get_all_pytrend_infos(newlist, ["우려"], 0, -1)
-newlist = get_all_pytrend_infos(newlist, ["충격"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["금융시장"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["경제 전망"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["이자율"], 0, 0)
+newlist, call = get_all_pytrend_infos(newlist, ["우려"], 0, -1, call)
+newlist, call = get_all_pytrend_infos(newlist, ["충격"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["금융시장"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["경제 전망"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["이자율"], 0, 0, call)
 
 # 21
-newlist = get_all_pytrend_infos(newlist, ["거래"], 0, -1)
-newlist = get_all_pytrend_infos(newlist, ["수출"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["수입"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["원화가치"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["전쟁"], 0, 0)
+newlist, call = get_all_pytrend_infos(newlist, ["거래"], 0, -1, call)
+newlist, call = get_all_pytrend_infos(newlist, ["수출"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["수입"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["원화가치"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["전쟁"], 0, 0, call)
 
-newlist = get_all_pytrend_infos(newlist, ["무역전쟁"], 0, -1)
-newlist = get_all_pytrend_infos(newlist, ["관세"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["불안"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["위축"], 0, -1)
-newlist = get_all_pytrend_infos(newlist, ["공포"], 0, 0)
+newlist, call = get_all_pytrend_infos(newlist, ["무역전쟁"], 0, -1, call)
+newlist, call = get_all_pytrend_infos(newlist, ["관세"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["불안"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["위축"], 0, -1, call)
+newlist, call = get_all_pytrend_infos(newlist, ["공포"], 0, 0, call)
 
 # 31
-newlist = get_all_pytrend_infos(newlist, ["경기 후퇴"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["성장"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["활력"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["투자"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["소비"], 0, 0)
+newlist, call = get_all_pytrend_infos(newlist, ["경기 후퇴"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["성장"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["활력"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["투자"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["소비"], 0, 0, call)
 
-newlist = get_all_pytrend_infos(newlist, ["소비심리"], 0, -1)
-newlist = get_all_pytrend_infos(newlist, ["생산"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["소비세"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["지수"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["유가"], 0, -1)
+newlist, call = get_all_pytrend_infos(newlist, ["소비심리"], 0, -1, call)
+newlist, call = get_all_pytrend_infos(newlist, ["생산"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["소비세"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["지수"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["유가"], 0, -1, call)
 
 # 41
-newlist = get_all_pytrend_infos(newlist, ["유출"], 0, 2)
-newlist = get_all_pytrend_infos(newlist, ["유입"], 0, -1)
-newlist = get_all_pytrend_infos(newlist, ["은행"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["정부"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["국민"], 0, 0)
+newlist, call = get_all_pytrend_infos(newlist, ["유출"], 0, 2, call)
+newlist, call = get_all_pytrend_infos(newlist, ["유입"], 0, -1, call)
+newlist, call = get_all_pytrend_infos(newlist, ["은행"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["정부"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["국민"], 0, 0, call)
 
-newlist = get_all_pytrend_infos(newlist, ["자영업"], 0, -1)
-newlist = get_all_pytrend_infos(newlist, ["4차 산업혁명"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["세금"], 0, 0)
-newlist = get_all_pytrend_infos(newlist, ["연말정산"], 0, 0)
+newlist, call = get_all_pytrend_infos(newlist, ["자영업"], 0, -1, call)
+newlist, call = get_all_pytrend_infos(newlist, ["4차 산업혁명"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["세금"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["연말정산"], 0, 0, call)
 # 49
 
 
