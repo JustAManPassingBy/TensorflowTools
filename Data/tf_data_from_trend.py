@@ -10,51 +10,8 @@ import random
 # keywords_list = ['pizza'](["pizza"])
 # keywords_list = ['pizza'. 'italian', 'spaghetti']
 
-def get_pytrend_info(initlist, startdate, enddate, keyword, catinfo, suggestion_id = -1, isfirst = False) :
-    #pytrends = TrendReq(hl='en-US',tz=360)
-    pytrends = TrendReq(hl='ko', tz=540)
-    #pytrends = TrendReq(hl='en-US', tz=360, proxies = {'https': 'https://34.203.233.13:80'})
-
-    if (suggestion_id != -1) :
-        # Get suggestion keywords from original keyword if required (suggestion_id is not -1)
-        keywords_suggestions = pytrends.suggestions(keyword=keyword[0])
-
-        if (len(keywords_suggestions) is 0) :
-            # Case could not find keyword suggestion
-            keywords_list = keyword
-        else :
-            # Case find keyword suggestion, with using suggestion id
-            keywords_list = keywords_suggestions[suggestion_id]
-    else :
-        # If suggestion is not required (suggestion_id is -1)
-        keywords_list = keyword
-            
-    print("Keyword :: " + str(keywords_list))
-    
-    ## options for build_payload
-    # cat        : category (number (0 = all, ...))
-    #               SEE categories https://github.com/pat310/google-trends-api/wiki/Google-Trends-Categories
-    # geo        : Conuntry (United state = 'US'), defaults to world all
-    # tz         : timezone offset (??)
-    # timeframe  : format should be YYYY-MM-DD YYYY-MM-DD"
-    # gprop      : google property (images, news, youtubes)
-    pytrends.build_payload(keywords_list, cat=catinfo, timeframe=str(startdate + " " + enddate), geo='KR', gprop='')
-
-    getdatainfo = pytrends.interest_over_time()
-
-    # Delete 'isPartial' column
-    #del getdatainfo['isPartial']
-
-    # change data info to numpy array
-    data_list = np.array(getdatainfo)
-
-    # reverse order
-    data_list = np.flipud(data_list)
-
-    end_date = datetime.datetime.strptime(enddate, "%Y-%m-%d")
-    decrease_date = datetime.timedelta(days = 1)
-
-    for data in data_list :
+def append_data_into_list(initlist, appendlist, end_date, decrease_date, isfirst = False) :
+    for data in appendlist :
         if (isfirst is True) :
             add_list = list()
 
@@ -78,51 +35,133 @@ def get_pytrend_info(initlist, startdate, enddate, keyword, catinfo, suggestion_
 
     return initlist
 
-def write_all_list_in_csv(writelist, filename) :
+def classify_col_item(col , isint = True) :
+    col = col.replace(",", "")
+    # check date
+    if ("-" in col) and (":" in col) :
+        col_item = datetime.datetime.strptime(col, "%Y-%m-%d %H:%M:%S")
+    elif ("년" in col) and ("월" in col) and ("일" in col) :
+        col_item = datetime.datetime.strptime(col, "%Y년 %m월 %d일")
+    # check empty space
+    elif (col == "") :
+        col_item = float(0)
+        if (isint is True) :
+            col_item = int(col_item)
+    # skip last item (%, M, G, etc...)
+    elif (col[-1].isdigit()) is False :
+        col_item = float(col[:-1])
+        if (isint is True) :
+            col_item = int(col_item)
+    else :
+        col_item = float(col)
+        if (isint is True) :
+            col_item = int(col_item)
+
+    return col_item
+
+
+def get_pytrend_info(initlist, startdate, enddate, keyword, catinfo, suggestion_id = -1, isfirst = False) :
+    #pytrends = TrendReq(hl='en-US',tz=360)
+    pytrends = TrendReq(hl='ko', tz=540)
+    #pytrends = TrendReq(hl='en-US', tz=360, proxies = {'https': 'https://34.203.233.13:80'})
+
+    if (suggestion_id != -1) :
+        # Get suggestion keywords from original keyword if required (suggestion_id is not -1)
+        keywords_suggestions = pytrends.suggestions(keyword=keyword[0])
+
+        if (len(keywords_suggestions) is 0) :
+            # Case could not find keyword suggestion
+            keywords_list = keyword
+        else :
+            # Case find keyword suggestion, with using suggestion id
+            keywords_list = list()
+            keywords_list.append(keywords_suggestions[0].get("mid"))
+    else :
+        # If suggestion is not required (suggestion_id is -1)
+        keywords_list = keyword
+            
+    print("Keyword :: " + str(keywords_list))
+    
+    ## options for build_payload
+    # cat        : category (number (0 = all, ...))
+    #               SEE categories https://github.com/pat310/google-trends-api/wiki/Google-Trends-Categories
+    # geo        : Conuntry (United state = 'US'), defaults to world all
+    # tz         : timezone offset (??)
+    # timeframe  : format should be YYYY-MM-DD YYYY-MM-DD"
+    # gprop      : google property (images, news, youtubes)
+    pytrends.build_payload(kw_list=keywords_list, cat=catinfo, timeframe=str(startdate + " " + enddate), geo='KR', gprop='')
+
+    getdatainfo = pytrends.interest_over_time()
+
+    # Delete 'isPartial' column
+    #del getdatainfo['isPartial']
+
+    data_list = np.array(getdatainfo)
+
+    # reverse order
+    data_list = np.flipud(data_list)
+
+    end_date = datetime.datetime.strptime(enddate, "%Y-%m-%d")
+    decrease_date = datetime.timedelta(days = 1)
+
+    initlist = append_data_into_list(initlist, data_list, end_date, decrease_date, isfirst)
+
+    return initlist
+
+def write_all_list_in_csv(writelist, filename, call_count) :
     with open(filename, 'w', encoding='utf-8', newline='\n') as csv_file :
         csv_writer = csv.writer(csv_file)
+
+        if (call_count != -1) :
+            call_count_item = list()
+            call_count_item.append(call_count)
+
+            csv_writer.writerow(call_count_item)
 
         for item in writelist :
             csv_writer.writerow(item)
 
+
+        print("Write Done, call count : ", str(call_count))
+
     return
 
-def restore_all_list_from_csv(prevlist, filename, isfirst = False) :
-    if (len(prevlist) != 0) or (isfirst is True) :
-        return
+def restore_all_list_from_csv(prevlist, filename) :
 
-    with open(filename, 'w', encoding='utf-8', newline='\n') as csv_file :
-        csv_reader = csv.reader(csv_file)
+    try :
+        with open(filename, 'r', encoding='utf-8', newline='\n') as csv_file :
+            new_call_count = int(csv_file.readline())
+            csv_reader = csv.reader(csv_file)
 
-        for row in csv_reader :
-            row_items = list()
+
+            for row in csv_reader :
+                row_items = list()
+
                 
-            for col in row :
-                col = col.replace(",", "")
-                # check date
-                if ("-" in col) and (":" in col) :
-                    col_item = datetime.datetime.strptime(col, "%Y년 %m월 %d일")
-                # check empty
-                elif (col == "") :
-                    col_item = float(0)
-                # skip last item
-                elif (col[-1].isdigit()) is False :
-                    col_item = float(col[:-1])
-                else :
-                    col_item = float(col)
+                for col in row :
+                    col_item = classify_col_item(col)
                     
-                row_items.append(col_item)      
+                    row_items.append(col_item)      
+
             
-            prevlist.append(row_items)
+                prevlist.append(row_items)
 
-    return
 
-def get_all_pytrend_infos(initlist, keyword, catinfo, suggestion_id, call_count, original_isfirst = False) :
-    #restore_all_list_from_csv(initlist, "backup.csv", original_isfirst)
+            print("Resore Done, call count : ", str(new_call_count))
+    except :
+        print("Restore Fail")
+        new_call_count = -1
+
+    return prevlist, new_call_count
+
+def get_all_pytrend_infos(initlist, keyword, catinfo, suggestion_id, call_count, restore_call_count, original_isfirst = False) :
+    if(restore_call_count >= call_count) :
+        print("skip keyword : ", str(keyword))
+        return initlist, (call_count + 1)
     
     # (each repeat count gets 6 month datas)
     repeat_count = 2 * 12
-
+    
     start_year = 2018
 
     # even = YYYY-06-01 ~ YYYY-12-31
@@ -134,6 +173,7 @@ def get_all_pytrend_infos(initlist, keyword, catinfo, suggestion_id, call_count,
     enddate_odd = '-05-31'
 
     print("Keyword : " + str(keyword))
+
     
     for i in range(0, repeat_count) :
         print("Act : " + str(i))
@@ -150,11 +190,10 @@ def get_all_pytrend_infos(initlist, keyword, catinfo, suggestion_id, call_count,
         print("Act : " + str(i) + " Done!")
 
         # We need time interval between getting pytrend info, so that avoid blocking from GOOGLE.
-        time.sleep(random.randrange(30, 60))
+        time.sleep(60)
 
-    print(initlist[0], len(initlist))
-    
-    write_all_list_in_csv(initlist, "backup_" + str(call_count) + ".csv")
+ 
+    write_all_list_in_csv(initlist, "backup.csv", call_count)
 
     return initlist, (call_count + 1)
 
@@ -176,70 +215,72 @@ def show_list_of_keyword(keyword) :
 
 newlist = list()
 call = 0
+newlist, restore_call = restore_all_list_from_csv(newlist, "backup.csv")
 
+        
 # 1
-newlist, call = get_all_pytrend_infos(newlist, ["주가"], 0, 0, call, original_isfirst = True)
-newlist, call = get_all_pytrend_infos(newlist, ["주식"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["상승"], 0, -1, call)
-newlist, call = get_all_pytrend_infos(newlist, ["하락"], 0, -1, call)
-newlist, call = get_all_pytrend_infos(newlist, ["전망"], 0, -1, call)
+newlist, call = get_all_pytrend_infos(newlist, ["주가"], 0, 0, call, restore_call, original_isfirst = True)
+newlist, call = get_all_pytrend_infos(newlist, ["주식"], 0, 0,  call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["상승"], 0, -1, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["하락"], 0, -1, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["전망"], 0, -1, call, restore_call)
 
-newlist, call = get_all_pytrend_infos(newlist, ["예측"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["보고서"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["낙관"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["비관"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["긍정"], 0, -1, call)
+newlist, call = get_all_pytrend_infos(newlist, ["예측"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["보고서"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["낙관"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["비관"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["긍정"], 0, -1, call, restore_call)
 
 # 11
-newlist, call = get_all_pytrend_infos(newlist, ["부정"], 0, -1, call)
-newlist, call = get_all_pytrend_infos(newlist, ["미래"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["기대"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["실망"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["걱정"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["부정"], 0, -1, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["미래"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["기대"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["실망"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["걱정"], 0, 0, call, restore_call)
 
-newlist, call = get_all_pytrend_infos(newlist, ["우려"], 0, -1, call)
-newlist, call = get_all_pytrend_infos(newlist, ["충격"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["금융시장"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["경제 전망"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["이자율"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["우려"], 0, -1, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["충격"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["금융시장"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["경제 전망"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["이자율"], 0, 0, call, restore_call)
 
 # 21
-newlist, call = get_all_pytrend_infos(newlist, ["거래"], 0, -1, call)
-newlist, call = get_all_pytrend_infos(newlist, ["수출"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["수입"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["원화가치"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["전쟁"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["거래"], 0, -1, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["수출"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["수입"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["원화가치"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["전쟁"], 0, 0, call, restore_call)
 
-newlist, call = get_all_pytrend_infos(newlist, ["무역전쟁"], 0, -1, call)
-newlist, call = get_all_pytrend_infos(newlist, ["관세"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["불안"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["위축"], 0, -1, call)
-newlist, call = get_all_pytrend_infos(newlist, ["공포"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["무역전쟁"], 0, -1, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["관세"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["불안"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["위축"], 0, -1, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["공포"], 0, 0, call, restore_call)
 
 # 31
-newlist, call = get_all_pytrend_infos(newlist, ["경기 후퇴"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["성장"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["활력"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["투자"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["소비"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["경기 후퇴"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["성장"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["활력"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["투자"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["소비"], 0, 0, call, restore_call)
 
-newlist, call = get_all_pytrend_infos(newlist, ["소비심리"], 0, -1, call)
-newlist, call = get_all_pytrend_infos(newlist, ["생산"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["소비세"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["지수"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["유가"], 0, -1, call)
+newlist, call = get_all_pytrend_infos(newlist, ["소비심리"], 0, -1, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["생산"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["소비세"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["지수"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["유가"], 0, -1, call, restore_call)
 
 # 41
-newlist, call = get_all_pytrend_infos(newlist, ["유출"], 0, 2, call)
-newlist, call = get_all_pytrend_infos(newlist, ["유입"], 0, -1, call)
-newlist, call = get_all_pytrend_infos(newlist, ["은행"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["정부"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["국민"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["유출"], 0, 2, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["유입"], 0, -1, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["은행"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["정부"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["국민"], 0, 0, call, restore_call)
 
-newlist, call = get_all_pytrend_infos(newlist, ["자영업"], 0, -1, call)
-newlist, call = get_all_pytrend_infos(newlist, ["4차 산업혁명"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["세금"], 0, 0, call)
-newlist, call = get_all_pytrend_infos(newlist, ["연말정산"], 0, 0, call)
+newlist, call = get_all_pytrend_infos(newlist, ["자영업"], 0, -1, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["4차 산업혁명"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["세금"], 0, 0, call, restore_call)
+newlist, call = get_all_pytrend_infos(newlist, ["연말정산"], 0, 0, call, restore_call)
 # 49
 
 
@@ -286,4 +327,4 @@ newlist = get_all_pytrend_infos(newlist, ["government"], 0, 0)
 newlist = get_all_pytrend_infos(newlist, ["frb"], 0, 0)
 '''
 
-write_all_list_in_csv(newlist, "trend_data.csv")
+write_all_list_in_csv(newlist, "trend_data.csv", -1)
