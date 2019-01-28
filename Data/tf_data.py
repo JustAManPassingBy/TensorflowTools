@@ -3,9 +3,11 @@ import datetime
 import csv
 
 def get_google_data_from_csv_file(prev_list, filename, original_item_num) :
-    with open(filename, encoding="utf-8") as csvDataFile:
+    with open(filename, encoding="utf-8", newline="\n") as csvDataFile:
     #with open(filename) as csvDataFile:
         csv_reader = csv.reader(csvDataFile)
+
+        max = 0
 
         for row in csv_reader :            
             item_count = 0
@@ -15,7 +17,10 @@ def get_google_data_from_csv_file(prev_list, filename, original_item_num) :
 
                 # date info
                 if (item_count == 1) :
-                    my_date = datetime.datetime.strptime(col, "%Y년 %m월 %d일")
+                    if ("년" in col) and ("월" in col) and ("일" in col) :
+                        my_date = datetime.datetime.strptime(col, "%Y년 %m월 %d일")
+                    else :
+                        my_date = datetime.datetime.strptime(col, "%Y-%m-%d %H:%M:%S")
 
                     skip_row = True
                         
@@ -43,9 +48,12 @@ def get_google_data_from_csv_file(prev_list, filename, original_item_num) :
                     # add list
                     target_list.append(col_item)
 
-                    original_item_num += 1
+            if (max < item_count) :
+                max = item_count
+
+    print("restore " + str(max - 1) + " datas")
             
-    return original_item_num
+    return max + original_item_num - 1
 
 def get_data_from_csv_file (prev_list, filename, isfirst = False) :
     skipfirstline = True
@@ -105,7 +113,10 @@ def get_data_from_csv_file (prev_list, filename, isfirst = False) :
 
             if (isfirst is True) :
                 prev_list.append(target_list)
-            
+
+    if (isfirst is True) :
+        print("Len : " + str(len(prev_list)))
+    
     return
 
 def clipping_all_data(data_arr, idx, savename) :
@@ -201,23 +212,24 @@ def make_data (data_list, startdate, enddate, filename, output_count, num_data, 
                 #continue
 
             # check omit data
-            if (len(each_list) < total_index) : continue
+            if (len(each_list) < total_index) :
+                continue
 
             total_item += 1
 
             row_array=list()
 
             # input write
-            for i in range (1, total_index) :
+            for i in range (2, 50) :
                 #my_file.write(str(round(prev_list[i] - prev_prev_list[i], 2)) + "\t")
-                row_array.append(prev_list[i])
+                row_array.append(prev_list[i] / 100)
                 #if (prev_list[i] >= 0) :
                 #    my_file.write("1.0\t")
                 #else :
                 #    my_file.write("0.0\t")
 
             # output write
-            for i in range(total_index, total_index + output_count) :
+            for i in range(1, 2) :
                 # idx 104 matches with multiple_data[103], 0 multipler, 1 cur_min
                 # restore = (X / multipler) + cur_min
                 if ((each_list[i] / multiple_data) > 0) :
@@ -239,7 +251,7 @@ def make_data (data_list, startdate, enddate, filename, output_count, num_data, 
 
     print(":: Make File info ::")
     print("File : " + filename)
-    print("items : ", valid_item, " / ", total_item, " index(input) : ", total_index - 1, " index(output) : ", output_count)
+    print("items : ", valid_item, " / ", total_item, " index(input) : ", total_index - 1 - output_count, " index(output) : ", output_count)
 
     
     return
@@ -248,13 +260,13 @@ def make_data (data_list, startdate, enddate, filename, output_count, num_data, 
 datalist = list()
 
 # num_datas
-prev_num_datas = 1
+prev_num_datas = 2
 
 muldata = 100
 
 output_loop = 1
 
-get_data_from_csv_file(datalist, "다우존스 내역.csv", isfirst = True) # 1
+get_data_from_csv_file(datalist, "코스피지수 내역.csv", isfirst = True) # 1
 num_datas = get_google_data_from_csv_file(datalist, "trend_data.csv", prev_num_datas)
 
 '''
