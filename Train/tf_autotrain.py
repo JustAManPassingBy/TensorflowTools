@@ -19,23 +19,23 @@ from tf_functions import cost_predictor, get_data_with_float32, print_data, get_
 ''' Variables '''
 tf.set_random_seed(764)
 
-my_learning_rate = 1e-4
+my_learning_rate = 1e-5
 
 my_regularization_rate = 0
 
 dropout_ratio = 1.0
 
 # training counts(epochs)
-training_epochs = 100
+training_epochs = 1000000
 
 # number of input datasets for train
-dataset_size = 51
+dataset_size = 1376
 
 # number of input datasets for test
-testdata_size = 28
+testdata_size = 126
 
 # number of batches (data counts for training once)
-batch_size = 20
+batch_size = 50
 
 # Print / Graph inverval (print cycles)
 print_interval = 100
@@ -43,7 +43,7 @@ graph_interval = 5
 summary_interval = 10
 
 # each input data's node size
-input_arraysize = 28
+input_arraysize = 48
 
 # each output data's node size
 output_arraysize = 2
@@ -54,10 +54,10 @@ cost_list_size = 50
 
 ''' files '''
 # train file name
-train_file="trend.txt"
+train_file="train.txt"
 
 # test file name
-test_file="checktrend.txt"
+test_file="test.txt"
 
 ## save & restore variables 
 # set "NULL" if don't have it
@@ -101,8 +101,15 @@ direct_bridge = False
 # Layer  input , layer '1' , layer '2'  ...  layer 'k' , output
 if (direct_bridge is True) :
     layer_size=[input_arraysize, input_arraysize,86, 72, 32, 13, output_arraysize]
-else : 
-    layer_size=[input_arraysize, 238, 86, 72, 32, 15, output_arraysize]
+else :
+    #layer_size=[input_arraysize, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, output_arraysize]
+    layer_size = list()
+    layer_size.append(input_arraysize)
+
+    for i in range(input_arraysize - 1, output_arraysize, -1) :
+        layer_size.append(i)
+
+    layer_size.append(output_arraysize)
 
 ############### PROGRAM LAYER ###################
 
@@ -366,7 +373,7 @@ Xtest = list()
 Ytest = list()
 
 #Xtest, Ytest = get_raw_data_from_csv(Xtest, Ytest, "America_NASDAQ.csv", drop_yarr = True, skipfirstline = True)
-Xtest, Ytest = get_raw_data_from_tsv(Xtest, Ytest, test_file, X_size = testdata_size,Y_size = 2, drop_yarr = True, skipfirstline = False)
+Xtest, Ytest = get_raw_data_from_tsv(Xtest, Ytest, test_file, X_size = testdata_size,Y_size = 2, drop_yarr = False, skipfirstline = False)
 
 print (len(Xtest), len(Xtest[0]), len(Ytest[0]), len(Ytest))
 
