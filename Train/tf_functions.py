@@ -2,57 +2,6 @@ import math
 import csv
 import datetime
 
-# Function Cost predictor
-# new_input   : input function
-# list_input  : number of save variables
-# num_descend : least number that has descend relationship 
-def cost_predictor(new_input, list_input, cur_learning_rate, input_list, num_descend = -1, fix_num_descend = -1) :
-    # add input
-    input_list.append(new_input)
-
-    # check input size
-    if (len(input_list) < list_input) :
-        return 1
-
-    # check whether erase first list
-    if (len(input_list) > list_input) :
-        input_list.pop(0)
-
-    # calculate checking number of descend
-    if (num_descend < 0) :
-        num_descend = 0
-    elif (num_descend >= list_input) :
-        num_descend = list_input - 1
-
-    calculated_descend = 0
-
-    # check list
-    for i in range(0, list_input - 1) :
-        # check descending
-        if (input_list[i] > input_list[i + 1]) :
-            calculated_descend += 1
-
-    # print error if calculated_descend < num_descend
-    if (calculated_descend < num_descend) :
-        print(' Cost Predictor !! descend count calculate : {} / goal :  >= {} / list : {} '.format(calculated_descend, num_descend, (list_input - 1)))
-        print('  - Might you need to adjust learning rate or nodes & layers')
-
-        # clear all list
-        input_list.clear()
-
-    # divide learning rate 4 and take this value with new learning rate
-    if (calculated_descend == fix_num_descend) :
-        print("Decrease Learning rate Quarter")
-
-        # clear all list
-        input_list.clear()
-
-        return 2
-        
-    return 1
-# End of function
-
-
 # Function get_data
 # num_of_data_set : data set
 # X_filename  : input_filename

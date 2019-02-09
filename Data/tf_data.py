@@ -222,7 +222,7 @@ def make_data (data_list, startdate, enddate, filename, output_count, num_data, 
             # input write
             for i in range (2, 50) :
                 #my_file.write(str(round(prev_list[i] - prev_prev_list[i], 2)) + "\t")
-                row_array.append(prev_list[i] / 100)
+                row_array.append(prev_list[i] / 10)
                 #if (prev_list[i] >= 0) :
                 #    my_file.write("1.0\t")
                 #else :
@@ -232,7 +232,7 @@ def make_data (data_list, startdate, enddate, filename, output_count, num_data, 
             for i in range(1, 2) :
                 # idx 104 matches with multiple_data[103], 0 multipler, 1 cur_min
                 # restore = (X / multipler) + cur_min
-                if ((each_list[i] / multiple_data) > 0) :
+                if ((each_list[i]) > 0) :
                     row_array.append(float(1.0))
                     row_array.append(float(0.0))
                 else :

@@ -8,7 +8,11 @@ import sys
 import threading
 import time
 
-from tf_functions import cost_predictor, get_data_with_float32, print_data, get_raw_data_from_csv, get_raw_data_from_tsv, print_result, print_cost
+from tf_functions import get_data_with_float32, print_data, get_raw_data_from_csv, get_raw_data_from_tsv, print_result, print_cost
+from tf_trainfunctions import cost_predictor, create_cnn_layer, create_layer, summary_histogram
+
+# Processing
+print("Processing")
 
 ''' Collect Mnist DATA '''
 #from tensorflow.examples.tutorials.mnist import input_data
@@ -26,7 +30,7 @@ my_regularization_rate = 0
 dropout_ratio = 1.0
 
 # training counts(epochs)
-training_epochs = 1000000
+training_epochs = 10000
 
 # number of input datasets for train
 dataset_size = 1376
@@ -102,16 +106,19 @@ direct_bridge = False
 if (direct_bridge is True) :
     layer_size=[input_arraysize, input_arraysize,86, 72, 32, 13, output_arraysize]
 else :
-    #layer_size=[input_arraysize, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, output_arraysize]
-    layer_size = list()
-    layer_size.append(input_arraysize)
+    layer_size=[input_arraysize, 40, output_arraysize]
+    #layer_size = list()
+    #layer_size.append(input_arraysize)
 
-    for i in range(input_arraysize - 1, output_arraysize, -1) :
-        layer_size.append(i)
+    #for i in range(input_arraysize - 1, output_arraysize, -1) :
+    #    layer_size.append(i)
 
-    layer_size.append(output_arraysize)
+    #layer_size.append(output_arraysize)
 
 ############### PROGRAM LAYER ###################
+# 20% Variation create
+print(" 20% Done")
+
 
 ''' Check Validity '''
 # check direct bridge
@@ -146,6 +153,9 @@ sess = tf.InteractiveSession()
 X = tf.placeholder(tf.float64, [None, layer_size[0]])
 Y = tf.placeholder(tf.float64, [None, layer_size[total_layer - 1]])
 
+# 40% Validity check
+print(" 40% Done")
+
 
 ''' Make & Get array for train data '''
 # Make list
@@ -158,82 +168,51 @@ Xarr, Yarr = get_raw_data_from_tsv(Xarr, Yarr, train_file, X_size = dataset_size
 
 # create Batches(Slice of train data)
 ## Normal batch
-#X_batches, Y_batches = tf.train.batch([Xarr, Yarr], batch_size=batch_size, enqueue_many=True, allow_smaller_final_batch=True)
+X_batches, Y_batches = tf.train.batch([Xarr, Yarr], batch_size=batch_size, enqueue_many=True, allow_smaller_final_batch=True)
 ## Random batch
-num_min = num_thread * dataset_size
-X_batches, Y_batches = tf.train.shuffle_batch([Xarr, Yarr], enqueue_many=True, batch_size=batch_size, capacity = (num_thread + 2) * num_min , min_after_dequeue=(num_min), allow_smaller_final_batch=True)
+#num_min = num_thread * dataset_size
+#X_batches, Y_batches = tf.train.shuffle_batch([Xarr, Yarr], enqueue_many=True, batch_size=batch_size, capacity = (num_thread + 2) * num_min , min_after_dequeue=(num_min), allow_smaller_final_batch=True)
 
 
 ''' Variable for Dynamically change learning rate '''
 #global_step = tf.Variable(0, trainable=False)
 #my_learning_rate = tf.train.exponential_decay(my_initial_learning_rate, global_step, decay_steps * total_batch, decay_rate, staircase=True)
 
+# 60% Get layer
+print(" 60% Done")
+
 
 ''' Setting Layer '''
 # list for tensor
 wlist = list()
 blist = list()
+llist = list()
+
+# set initial next input : X
+next_input = X
 
 ### First layer - layer 1 ~ layer k - 1 - layer k
 # get variable  : get initialize node values with xavier initializer (size is [layer size[i] , layer size[i + 1])
 # varaible      : get constant variable
 # relu function : Declining function (x > 0 ? x : 0.01x)
 # dropout       : Probability that specific node is dropped in learning (Re_estimate for every study)
-for i in range(0, total_layer - 1) :
-    ## Weight / Bias
-    if (direct_bridge is False) or (i != 0) :
-        W = tf.get_variable(('W'+str(i)), shape=[layer_size[i], layer_size[i + 1]],
-                           initializer=tf.contrib.layers.xavier_initializer(), dtype=tf.float64)
-        B = tf.Variable(tf.random_normal([layer_size[i + 1]], dtype=tf.float64), name=('B'+str(i)))
-    else :
-        W = tf.Variable(tf.convert_to_tensor(np.eye(layer_size[i], dtype=np.float64)), name='W0')
+for i in range(0, total_layer - 2) : 
+    next_input, W, B  = create_layer(next_input, layer_size[i], layer_size[i + 1], i, wlist, blist, llist)
 
-    ## Layer Result
-    # First layer : Get input
-    if (i == 0) :
-        if (direct_bridge is False) :
-            #L = tf.matmul(X, W) + B
-            L = tf.nn.relu(tf.matmul(X, W) + B)
-            L = tf.nn.dropout(L, keep_prob=dropout_ratio)
-        else :
-            L = tf.nn.relu(tf.matmul(X, W))
-            #L = tf.matmul(X, W)
-    # Else : Get previous hidden
-    elif (i != total_layer - 2) :
-        L = tf.nn.relu(tf.matmul(PREVL, W) + B)
-        #L = tf.matmul(PREVL, W) + B
-        L = tf.nn.dropout(L, keep_prob=dropout_ratio)
-
-    wlist.append(W)
-    if (direct_bridge is False) or (i != 0) :
-        blist.append(B)
-
-    PREVL = L
+_, W, B = create_layer(next_input, layer_size[total_layer - 2], layer_size[total_layer - 1], total_layer - 2, wlist, blist)
 
 
 ''' histogram_summay '''
-if (direct_bridge is False) :
-    whist = tf.summary.histogram("weights" + "0", wlist[0])
-    bhist = tf.summary.histogram("bias" + "0", blist[0])
-else :
-    whist = tf.summary.histogram("weights" + "0", wlist[0])
-
-for i in range(1, total_layer - 1) :
-    whist = tf.summary.histogram("weights" + str(i), wlist[i])
-
-    if (direct_bridge is True) :
-        bhist = tf.summary.histogram("bias" + str(i), blist[i - 1])
-    else :
-        bhist = tf.summary.histogram("bias" + str(i), blist[i])
+whist, bhist, _ = summary_histogram(total_layer, wlist, blist, llist)
 
 
 ''' Your hypothesis (X => Layer => Hypothesis) '''
 # set hypothesis
 # hypothesis [0.9 0.1 0.0 0.0 ...] // O.9 might be an answer
-hypothesis = tf.matmul(L, W) + B
-#hypothesis = tf.nn.relu(tf.matmul(L, W) + B)
-#hypothesis= tf.sigmoid(tf.matmul(L, W) + B)
-#hypothesis= tf.nn.tanh(tf.matmul(L, W) + B)
+hypothesis = tf.matmul(next_input, W) + B
+#hypothesis = tf.nn.relu(tf.matmul(next_input, W) + B)
+#hypothesis= tf.sigmoid(tf.matmul(next_input, W) + B)
+#hypothesis= tf.nn.tanh(tf.matmul(next_input, W) + B)
 
 
 ''' Add hypothesis histogram '''
@@ -271,6 +250,9 @@ l2reg = my_regularization_rate * tf.reduce_mean(tf.square(W))
 optimizer = tf.train.AdamOptimizer(learning_rate=my_learning_rate, beta1=0.9, beta2=0.9999, epsilon=1e-9).minimize((cost - l2reg))
 #optimizer = tf.train.AdamOptimizer(learning_rate=my_learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-8).minimize((cost - l2reg), global_step=global_step)
 #optimizer = tf.train.GradientDescentOptimizer(learning_rate=my_learning_rate).minimize(cost - l2reg)
+
+# 80% Create Layer done
+print(" 80% Done")
 
 
 ''' Restore Process '''
@@ -315,6 +297,9 @@ coord = tf.train.Coordinator()
 threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
 min_cost = float(4294967296)
+
+# 100% : All ready
+print("100% Done")
 
 
 ''' Train Model '''
