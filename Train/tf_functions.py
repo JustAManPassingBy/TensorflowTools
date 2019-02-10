@@ -1,6 +1,7 @@
 import math
 import csv
 import datetime
+import sys
 
 # Function get_data
 # num_of_data_set : data set
@@ -80,7 +81,7 @@ def print_data(X, filename) :
 # Print relation between expected value(X) and real value(Y) in stdout
 # X : expected value's array
 # Y : real value's array
-def print_result(X, Y) :
+def print_result(X, Y, interval=1) :
     row = max(len(X), len(Y))
     col_X = len(X[0])
     col_Y = len(Y[0])
@@ -88,7 +89,7 @@ def print_result(X, Y) :
     item = 0
     correct = 0
 
-    for cur_row in range(0, row) :
+    for cur_row in range(0, row, interval) :
         print("Expect : ", end ='')
 
         for (cur_col) in range(0, col_X) :
@@ -410,3 +411,28 @@ def get_raw_data_from_tsv (X_arr, Y_arr, filename, X_size = -1,Y_size = 1, drop_
     #X_arr = clipping_all_data(X_arr)
 
     return X_arr, Y_arr
+
+def print_all_layer_function(sess, filename, wlist, blist, total_layer, direct_bridge=False) :
+    origin_stdout, sys.stdout = sys.stdout, open(filename, "w")
+    
+    print(" --- W0 --- ")
+    print(sess.run([wlist[0]]))
+
+    if direct_bridge is False : 
+        print(" --- B0 --- ")
+        print(sess.run(blist[0]))
+              
+    for i in range(1, total_layer - 1) :
+        print("\n ====== NEW LAYER ======\n")
+
+        print(" --- W" + str(i) + " --- ")
+        print(sess.run(wlist[i]))
+
+        print(" --- B" + str(i) + " --- ")
+        if (direct_bridge is True) :
+            print(sess.run(blist[i - 1]))   
+        else :           
+            print(sess.run(blist[i]))
+    sys.stdout = origin_stdout
+    
+    return
