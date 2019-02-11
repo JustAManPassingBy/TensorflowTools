@@ -11,7 +11,9 @@ import matplotlib.pyplot as plt
 from tf_functions import get_data_with_float32, print_data, get_raw_data_from_csv, get_raw_data_from_tsv, print_result, print_cost, print_all_layer_function
 
 class Tensorflow_Machine :
-    def __init__(self, sess, name) :
+    def __init__(self,
+                 sess,
+                 name) :
         self.sess = sess
         self.name = name
 
@@ -37,7 +39,7 @@ class Tensorflow_Machine :
         self.batch_size = 50
 
         self.printgraph = True
-        self.print_interval = 100
+        self.print_interval = 10
         self.graph_interval = 20
         self.summary_interval = 1000
 
@@ -78,7 +80,8 @@ class Tensorflow_Machine :
         self.total_batch = int(self.dataset_size / self.batch_size)
         
 
-    def _set_conv2d_layer_size(self, input_arraysize) :
+    def _set_conv2d_layer_size(self,
+                               input_arraysize) :
         # reshaped layer (Batches(-1), Y, X, (channel = 1)
         self.reshape_input_layer = [-1, 8, 6, 1]
 
@@ -129,7 +132,10 @@ class Tensorflow_Machine :
         return 
 
 
-    def _set_layer_size(self, input_arraysize, output_arraysize, direct_bridge = False) :
+    def _set_layer_size(self,
+                        input_arraysize,
+                        output_arraysize,
+                        direct_bridge = False) :
         # Layer  input , layer '1' , layer '2'  ...  layer 'k' , output
         #if (direct_bridge is True) :
         #    my_layer = [input_arraysize, input_arraysize, 86, 72, 32, 13, output_arraysize]
@@ -140,7 +146,7 @@ class Tensorflow_Machine :
         my_layer = list()
         my_layer.append(input_arraysize)
     
-        for i in range(input_arraysize - 8, output_arraysize, -8) :
+        for i in range(input_arraysize - 8, output_arraysize, -10) :
             my_layer.append(i)
 
         my_layer.append(output_arraysize)
@@ -159,6 +165,7 @@ class Tensorflow_Machine :
             raise ValueError
 
         return
+
 
     def _get_datas_and_create_batches(self) :
         self.Xtrain = list()
@@ -187,6 +194,7 @@ class Tensorflow_Machine :
         
         return
 
+
     # Create CNN(Conv2d + Max Pool)
     # 1. input_array = input items
     # (X). input_layersize_array =  [(batches == -1), Y, X, (num_channels)] => [Y, X, (num_channels)]
@@ -196,10 +204,19 @@ class Tensorflow_Machine :
     # 6. max_pool_ksize = [(batches == 1 # no skips), Y, X, (num_channels == 1 # no skips)
     # 7. max_pool_stride_array = [(batches == 1 # no skips), Y, X, (num_channels == 1 # no skips)]
     # 8. final_reshape_to_1d = whether change 2dim * channels([Y, X, channels]) into 1dim 
-    def _create_cnn_2d_layer(self, input_array, filter_layersize_array, filter_stride_array,
-                             max_pool_ksize, max_pool_stride_array, layer_index, padding_type='SAME',
-                             dropout_ratio=1.0, input_dtype=tf.float64, wlist= False,
-                             final_reshape_to_1d= False, stddev=0.01) :
+    def _create_cnn_2d_layer(self,
+                             input_array,
+                             filter_layersize_array,
+                             filter_stride_array,
+                             max_pool_ksize,
+                             max_pool_stride_array,
+                             layer_index,
+                             padding_type='SAME',
+                             dropout_ratio=1.0,
+                             input_dtype=tf.float64,
+                             wlist= False,
+                             final_reshape_to_1d= False,
+                             stddev=0.01) :
 
         W = tf.Variable(tf.random_normal(filter_layersize_array,
                         stddev=stddev,
@@ -223,9 +240,19 @@ class Tensorflow_Machine :
     
         return output_array, W, L
 
+
     # Create 1 dimension Layer
-    def _create_1d_layer(self, input_array, input_layersize_array, output_layersize_array, layer_index, wlist = False,
-                      blist = False, llist = False, direct_bridge = False, dropout_ratio=1.0, input_dtype=tf.float64) :
+    def _create_1d_layer(self,
+                         input_array,
+                         input_layersize_array,
+                         output_layersize_array,
+                         layer_index,
+                         wlist = False,
+                         blist = False,
+                         llist = False,
+                         direct_bridge = False,
+                         dropout_ratio=1.0,
+                         input_dtype=tf.float64) :
         ## Weight / Bias
         if (direct_bridge is False) or (layer_index != 0) :
             W = tf.get_variable(('W'+str(layer_index)), shape=[input_layersize_array, output_layersize_array],
@@ -255,7 +282,13 @@ class Tensorflow_Machine :
 
         return output_array, W, B
 
-    def _summary_histogram(self, total_layer, wlist, blist, llist, direct_bridge = False) :
+
+    def _summary_histogram(self,
+                           total_layer,
+                           wlist,
+                           blist,
+                           llist,
+                           direct_bridge = False) :
         if (direct_bridge is False) :
             whist = tf.summary.histogram("weights" + "0", wlist[0])
             bhist = tf.summary.histogram("bias" + "0", blist[0])
@@ -274,6 +307,7 @@ class Tensorflow_Machine :
         lhist = llist
     
         return whist, bhist, lhist
+
 
     def _create_layers(self) :
         with tf.variable_scope(self.name) :
@@ -367,6 +401,7 @@ class Tensorflow_Machine :
             #accuracy = tf.reduce_mean(self.correct_prediction)
 
         return
+
     
     def _restore_training_values(self) :
         self.saver = tf.train.Saver()
@@ -397,13 +432,70 @@ class Tensorflow_Machine :
 
         return
 
+
     def _get_next_batch(self) :
         X_batch, Y_batch = self.sess.run([self.X_batches, self.Y_batches])
         #X_batch, Y_batch = mnist.train.next_batch(batch_size) # for mnist
         
         return X_batch, Y_batch
 
-    def training_model(self, training_epochs=-1) :
+
+    def setting_graph_for_training(self) :
+        if (self.printgraph is not True) :
+            return
+
+        self.Xgraph = list()
+        self.Ygraph = list()
+
+        return
+
+
+    def training_model_once(self,
+                            sess,
+                            coord,
+                            threads,
+                            min_cost,
+                            epoch) :
+        avg_cost = 0
+
+        # Each epoch trains amount of total batch (num_input_data / num_batches) 
+        for i in range(0, self.total_batch) :
+            X_batch, Y_batch = self._get_next_batch()
+
+            feed_dict = {self.X: X_batch, self.Y: Y_batch, self.keep_prob: self.dropout_ratio}
+            c, merge_result, _ = self.sess.run([self.cost, self.merged, self.optimizer], feed_dict=feed_dict)
+            avg_cost += c / self.total_batch
+
+        if (avg_cost < min_cost) :
+            min_cost = avg_cost
+
+        if (self.snapshotmincost is True) and (self.snapshotmincostpath != "NULL") :
+            saver.save(self.sess, self.snapshotmincostpath)
+
+        # Print & Save cost
+        if (epoch % self.print_interval) == 0 :
+            print('Epoch' , '{:7d}'.format(epoch), 'done. Cost :', '{:.9f}'.format(avg_cost))
+
+        # Temporary save path
+        if self.savepath != "NULL" :
+            self.saver.save(sess, self.savepath)
+
+        #self.saver.save(self.sess, "tmp/tem_save")
+
+        # Save variables for graph
+        if (self.printgraph is True) and (epoch % self.graph_interval) == 0 :
+            self.Xgraph.append(epoch)
+            self.Ygraph.append(avg_cost)
+
+        # for summary interval
+        if (epoch % self.summary_interval) == 0 :
+            self.writer.add_summary(merge_result, epoch)
+
+        return min_cost
+
+
+    def training_model(self,
+                       training_epochs=-1) :
         if (training_epochs < 1) :
             training_epochs = self.training_epochs
         
@@ -412,48 +504,13 @@ class Tensorflow_Machine :
 
         min_cost = float(4294967296)
 
-        if (self.printgraph is True) :
-            self.Xgraph = list()
-            self.Ygraph = list()
+        self.setting_graph_for_training()
 
         self.writer = tf.summary.FileWriter("./logs/train_logs", self.sess.graph)
 
         ''' Train Model '''
         for epoch in range(training_epochs):
-            avg_cost = 0
-
-            # Each epoch trains amount of total batch (num_input_data / num_batches) 
-            for i in range(0, self.total_batch) :
-                X_batch, Y_batch = self._get_next_batch()
-
-                feed_dict = {self.X: X_batch, self.Y: Y_batch, self.keep_prob: self.dropout_ratio}
-                c, merge_result, _ = self.sess.run([self.cost, self.merged, self.optimizer], feed_dict=feed_dict)
-                avg_cost += c / self.total_batch
-
-                if (avg_cost < min_cost) :
-                    min_cost = avg_cost
-
-                if (self.snapshotmincost is True) and (self.snapshotmincostpath != "NULL") :
-                    saver.save(self.sess, self.snapshotmincostpath)
-
-            # Print & Save cost
-            if (epoch % self.print_interval) == 0 :
-                print('Epoch' , '{:7d}'.format(epoch), 'done. Cost :', '{:.9f}'.format(avg_cost))
-
-            # Temporary save path
-            if self.savepath != "NULL" :
-                self.saver.save(self.sess, self.savepath)
-
-            #self.saver.save(self.sess, "tmp/tem_save")
-
-            # Save variables for graph
-            if (self.printgraph is True) and (epoch % self.graph_interval) == 0 :
-                self.Xgraph.append(epoch)
-                self.Ygraph.append(avg_cost)
-
-            # for summary interval
-            if (epoch % self.summary_interval) == 0 :
-                self.writer.add_summary(merge_result, epoch)
+            self.training_model_once(self.sess, coord, threads, min_cost, epoch)
 
         coord.request_stop()
         coord.join(threads)
@@ -462,6 +519,7 @@ class Tensorflow_Machine :
         print("Learning Done")
 
         return
+
 
     def test_model(self) :
         print_accuracy, predict_val, _ = self.sess.run([self.accuracy, self.hypothesis, self.Y],
@@ -490,7 +548,7 @@ class Tensorflow_Machine :
             plt.show()
 
 
-        return
+        return predict_val
 
 
 # Function Cost predictor

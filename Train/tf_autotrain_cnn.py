@@ -21,6 +21,6 @@ sess = tf.InteractiveSession()
 
 tm = Tensorflow_Machine(sess, "test_model")
 
-tm.training_model()
+tm.training_model(training_epochs = 500)
 
-tm.test_model()
+print(tm.test_model())
