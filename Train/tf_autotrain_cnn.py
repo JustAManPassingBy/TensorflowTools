@@ -19,7 +19,9 @@ from tf_trainfunctions import Tensorflow_Machine
 # get session
 sess = tf.InteractiveSession()
 
-tm = Tensorflow_Machine(sess, "test_model", "attribute.txt")
+tm = Tensorflow_Machine(sess, "model1",
+                        input_file = "models_attribute\model1.txt",
+                        layer_file = "models_layers\model1.txt")
 
 tm.training_model(training_epochs = 500)
 

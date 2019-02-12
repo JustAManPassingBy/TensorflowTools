@@ -25,7 +25,7 @@ class Tensorflow_Machine :
             self._get_variables(input_file)
 
         if (layer_file is not False) :
-            print("skip")
+            self._get_all_layers(layer_file)
         else :
             self._set_conv2d_layer_size(self.input_arraysize)
             self._set_layer_size(self.reshaped_1d_layer, self.output_arraysize, self.direct_bridge)
@@ -72,6 +72,8 @@ class Tensorflow_Machine :
         self.snapshotmincostpath="/tmp/minmodel.ckpt"
 
         self.input_dtype = tf.float64
+
+        self.print_created_layer = False
 
         # For variable learning rate (TBU)
         self.my_initial_learning_rate=1e-3
@@ -231,6 +233,175 @@ class Tensorflow_Machine :
 
         return
 
+    def _record_cnn(self,
+                    line) :
+        parse_item = line.replace("[", "").replace("]", "").split(",")
+
+        # 1. conv
+        if (parse_item[0] == "conv") :
+            for i in range(1, len(parse_item)) :
+                self.reshape_input_layer.append(int(parse_item[i]))
+
+        # 2. f_layer
+        elif (parse_item[0] == "f_layer") :
+            new_layer = list()
+            for i in range(1, len(parse_item)) :
+                new_layer.append(int(parse_item[i]))
+
+            self.filter_layers.append(new_layer)
+
+        # 3. f_stride
+        elif (parse_item[0] == "f_stride") :
+            new_layer = list()
+            for i in range(1, len(parse_item)) :
+                new_layer.append(int(parse_item[i]))
+
+            self.filter_strides.append(new_layer)
+
+        # 4. m_ksize
+        elif (parse_item[0] == "m_ksize") :
+            new_layer = list()
+            for i in range(1, len(parse_item)) :
+                new_layer.append(int(parse_item[i]))
+
+            self.max_pool_ksizes.append(new_layer)
+
+        # 5. m_stride
+        elif (parse_item[0] == "m_stride") :
+            new_layer = list()
+            for i in range(1, len(parse_item)) :
+                new_layer.append(int(parse_item[i]))
+
+            self.max_pool_strides.append(new_layer)
+
+            # After 5 is called, increase layersize 1
+            self.num_conv2d_layers += 1
+
+            # Check all layer's sizes are same
+            if ((len(self.filter_layers) != len(self.filter_strides))
+                or (len(self.filter_strides) != len(self.max_pool_ksizes))
+                or (len(self.max_pool_ksizes) != len(self.max_pool_strides))) :
+                print("Error : Your conv2d layer's size is not same")
+                raise ValueError
+
+        # 6. 1d_size
+        elif (parse_item[0] == "1d_size") :
+            self.reshaped_1d_layer = int(parse_item[1])
+
+        # 7. pad_type
+        elif (parse_item[0] == "pad_type") :
+            self.padding_type = str(parse_item[1])
+
+            
+        # 8. std_dev
+        elif (parse_item[0] == "std_dev") :
+            self.filter_stddev = float(parse_item[1])
+
+        # Default
+        else :
+            print(" [_record_cnn] UNKNOWN Line : [" + str(line) + "]")
+            
+
+        return 
+
+                           
+    def _record_1d(self,
+                   line) :
+        parse_item = line.replace("[", "").replace("]", "").split(",")
+
+        # 1. item
+        if (parse_item[0] == "item") :
+            for i in range(1, len(parse_item)) :
+                self.one_dim_layer.append(int(parse_item[i]))
+
+        # 2. for
+        elif (parse_item[0] == "for") :
+            for layer in range(int(parse_item[1]), int(parse_item[2]), int(parse_item[3])) :
+                self.one_dim_layer.append(layer)
+
+        # Default
+        else :
+            print(" [_record_1d] UNKNOWN Line : [" + str(line) + "]")
+
+        self.one_dim_layer_size = len(self.one_dim_layer)
+
+        return 
+
+
+    def _init_all_layers(self) :
+        self.reshape_input_layer = []
+
+        self.filter_layers = []
+        self.filter_strides = []
+        
+        self.max_pool_ksizes = []
+        self.max_pool_strides = []
+
+        self.padding_type='SAME'
+        self.filter_stddev=0.01
+        
+        self.reshaped_1d_layer = -1
+        
+        self.num_conv2d_layers = 0
+
+        self.one_dim_layer = list()
+        
+        self.one_dim_layer_size = 0
+
+        return
+
+
+    def _get_all_layers(self,
+                        input_filename) :
+        with open(input_filename, 'r') as open_file :
+            lines = open_file.readlines()
+
+            # Mode : NULL, DL = 1d_layer, CNN = 2d_layer
+            mode = "NULL"
+
+            # Recording (True / False)
+            recording = False
+
+            # Initalize all layers
+            self._init_all_layers()
+
+            for line in lines :
+                # Skip comment(#, /)
+                if (line[0] == '#') or (line[0] == '/') :
+                    continue
+
+                # CNN
+                if ("CNN" in line) :
+                    mode = "CNN"
+                # DL
+                elif ("DL" in line) :
+                    mode = "DL"
+
+                # Catch { (Start Record)
+                if ("{" in line) :
+                    recording = True
+                    continue
+
+                # Catch } (End Record)
+                elif ("}" in line) :
+                    recording = False
+                    continue
+
+                if (recording is True) :
+                    trimmed_line = line.replace(" ","").replace("\r", "").replace("\n", "").replace("\t", "")
+                    # CNN
+                    if ("CNN" == mode) :
+                        self._record_cnn(trimmed_line)
+
+                    # DL
+                    elif ("DL" == mode) :
+                        self._record_1d(trimmed_line)
+                
+
+            open_file.close()
+
+        return
+
 
     def _get_datas_and_create_batches(self) :
         self.Xtrain = list()
@@ -282,6 +453,9 @@ class Tensorflow_Machine :
                              wlist= False,
                              final_reshape_to_1d= False,
                              stddev=0.01) :
+        if (self.print_created_layer is True) :
+            print("CNN", filter_layersize_array, filter_stride_array, max_pool_ksize,
+                  max_pool_stride_array, layer_index)
 
         W = tf.Variable(tf.random_normal(filter_layersize_array,
                         stddev=stddev,
@@ -318,6 +492,10 @@ class Tensorflow_Machine :
                          direct_bridge = False,
                          dropout_ratio=1.0,
                          input_dtype=tf.float64) :
+
+        if (self.print_created_layer is True) :
+            print("1Dim", input_layersize_array, output_layersize_array, layer_index)
+      
         ## Weight / Bias
         if (direct_bridge is False) or (layer_index != 0) :
             W = tf.get_variable(('W'+str(layer_index)), shape=[input_layersize_array, output_layersize_array],
