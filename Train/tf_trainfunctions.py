@@ -13,14 +13,22 @@ from tf_functions import get_data_with_float32, print_data, get_raw_data_from_cs
 class Tensorflow_Machine :
     def __init__(self,
                  sess,
-                 name) :
+                 name,
+                 input_file = False,
+                 layer_file = False) :
         self.sess = sess
         self.name = name
 
         self._set_variables()
-        
-        self._set_conv2d_layer_size(self.input_arraysize)
-        self._set_layer_size(self.reshaped_1d_layer, self.output_arraysize, self.direct_bridge)
+
+        if (input_file is not False) :
+            self._get_variables(input_file)
+
+        if (layer_file is not False) :
+            print("skip")
+        else :
+            self._set_conv2d_layer_size(self.input_arraysize)
+            self._set_layer_size(self.reshaped_1d_layer, self.output_arraysize, self.direct_bridge)
 
         self._get_datas_and_create_batches()
 
@@ -78,6 +86,63 @@ class Tensorflow_Machine :
         ### Auto Calculated Options ###
         self.goal_descend_relation = int(self.cost_list_size / 2)
         self.total_batch = int(self.dataset_size / self.batch_size)
+
+
+    # Setting Pared Line
+    # 1. Return "True" if object is acceptable
+    # 2. Return "False" if 1 is false.
+    def _setting_parsed_line(self,
+                             object_name,
+                             object_value) :
+        try :
+            getattr(self, object_name)
+        except AttributeError :
+            return False
+
+        # 1. String
+        if (('"' in object_value) or ("'" in object_value)) :
+            modified_object_value = str(object_value).replace("'", "").replace('"', '')
+        # 2. Float
+        elif (('e' in object_value) and ('-' in object_value)) or ('.' in object_value) :
+            modified_object_value = float(object_value)
+        # 3. Boolean True
+        elif (object_value == "True") :
+            modified_object_value = True
+        # 4. Boolean False
+        elif (object_value == "False") :
+            modified_object_value = False
+        # 5. Else : integer
+        else :
+            modified_object_value = int(object_value)
+
+        setattr(self, object_name, modified_object_value)
+        
+        return True
+            
+        
+    def _get_variables(self, input_filename) :
+        with open(input_filename, 'r') as open_file :
+            lines = open_file.readlines()
+
+            for line in lines :
+                parsed_line = line.replace(' ', '').replace('\r', '').replace('\n', '').split('=')
+
+                # skip 1. Split value is not 2
+                if (len(parsed_line) != 2) :
+                    continue
+
+                # skip 2. First letter is not an alphabet
+                if (parsed_line[0][0].isalpha() is False) :
+                    continue
+
+                # Check item
+                if (self._setting_parsed_line(parsed_line[0], parsed_line[1]) is False) :
+                    print(" [_get_variables] Skipped Line : [" +  str(line) + "]")
+
+
+            open_file.close()
+
+        return
         
 
     def _set_conv2d_layer_size(self,
@@ -146,7 +211,7 @@ class Tensorflow_Machine :
         my_layer = list()
         my_layer.append(input_arraysize)
     
-        for i in range(input_arraysize - 8, output_arraysize, -10) :
+        for i in range(input_arraysize - 8, output_arraysize, -12) :
             my_layer.append(i)
 
         my_layer.append(output_arraysize)
@@ -549,6 +614,11 @@ class Tensorflow_Machine :
 
 
         return predict_val
+
+
+    def get_test_result(self) :
+        return self.Ytest
+    
 
 
 # Function Cost predictor

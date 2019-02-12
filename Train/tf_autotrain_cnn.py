@@ -19,7 +19,7 @@ from tf_trainfunctions import Tensorflow_Machine
 # get session
 sess = tf.InteractiveSession()
 
-tm = Tensorflow_Machine(sess, "test_model")
+tm = Tensorflow_Machine(sess, "test_model", "attribute.txt")
 
 tm.training_model(training_epochs = 500)
 
