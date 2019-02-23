@@ -20,16 +20,16 @@ class Tensorflow_Machine:
 
         self._set_variables()
 
-        if (input_file is not False):
+        if input_file is not False:
             self._get_variables(input_file)
 
-        if (layer_file is not False):
+        if layer_file is not False:
             self._get_all_layers(layer_file)
         else:
             self._set_conv2d_layer_size(self.input_arraysize)
             self._set_layer_size(self.reshaped_1d_layer, self.output_arraysize, self.direct_bridge)
 
-        if (mnist is not False):
+        if mnist is not False:
             self.dataset_size = self.mnist.train.num_examples
             self.testdata_size = self.mnist.test.num_examples
 
@@ -90,6 +90,8 @@ class Tensorflow_Machine:
         self.goal_descend_relation = int(self.cost_list_size / 2)
         self.total_batch = int(self.dataset_size / self.batch_size)
 
+        return
+
     # Setting Pared Line
     # 1. Return "True" if object is acceptable
     # 2. Return "False" if 1 is false.
@@ -102,16 +104,16 @@ class Tensorflow_Machine:
             return False
 
         # 1. String
-        if (('"' in object_value) or ("'" in object_value)):
+        if ('"' in object_value) or ("'" in object_value):
             modified_object_value = str(object_value).replace("'", "").replace('"', '')
         # 2. Float
         elif (('e' in object_value) and ('-' in object_value)) or ('.' in object_value):
             modified_object_value = float(object_value)
         # 3. Boolean True
-        elif (object_value == "True"):
+        elif object_value == "True":
             modified_object_value = True
         # 4. Boolean False
-        elif (object_value == "False"):
+        elif object_value == "False":
             modified_object_value = False
         # 5. Else : integer
         else:
@@ -129,15 +131,15 @@ class Tensorflow_Machine:
                 parsed_line = line.replace(' ', '').replace('\r', '').replace('\n', '').split('=')
 
                 # skip 1. Split value is not 2
-                if (len(parsed_line) != 2):
+                if len(parsed_line) != 2:
                     continue
 
                 # skip 2. First letter is not an alphabet
-                if (parsed_line[0][0].isalpha() is False):
+                if parsed_line[0][0].isalpha() is False:
                     continue
 
                 # Check item
-                if (self._setting_parsed_line(parsed_line[0], parsed_line[1]) is False):
+                if self._setting_parsed_line(parsed_line[0], parsed_line[1]) is False:
                     print(" [_get_variables] Skipped Line : [" + str(line) + "]")
 
             open_file.close()
@@ -184,7 +186,7 @@ class Tensorflow_Machine:
         self.num_conv2d_layers = len(self.filter_layers)
 
         ''' Check validity '''
-        if (self.reshape_input_layer[1] * self.reshape_input_layer[2] != input_arraysize):
+        if self.reshape_input_layer[1] * self.reshape_input_layer[2] != input_arraysize:
             print("Error : Your reshaped values makes wrond result")
             raise ValueError
 
@@ -206,7 +208,7 @@ class Tensorflow_Machine:
         # else :
         #    my_layer = [input_arraysize, 20, output_arraysize]
 
-        ''' Layers definition using for '''
+        # Layers definition using for
         my_layer = list()
         my_layer.append(input_arraysize)
 
@@ -218,14 +220,14 @@ class Tensorflow_Machine:
         self.one_dim_layer = my_layer
         self.one_dim_layer_size = len(my_layer)
 
-        ''' Check validity '''
+        # check validity
         if (direct_bridge is True) and (input_arraysize != layer_size[1]):
             print("Error : In direct bridge, first hidden layer size is same with input layer")
             print("Input : " + str(input_arraysize) + " / Hidden : " + str(layer_size[1]))
             raise ValueError
 
         if len(my_layer) <= 1:
-            print(str(total_layer) + " :: Your layer is too small XD")
+            print(str(len(my_layer)) + " :: Your layer is too small XD")
             raise ValueError
 
         return
@@ -235,12 +237,12 @@ class Tensorflow_Machine:
         parse_item = line.replace("[", "").replace("]", "").split(",")
 
         # 1. conv
-        if (parse_item[0] == "conv"):
+        if parse_item[0] == "conv":
             for i in range(1, len(parse_item)):
                 self.reshape_input_layer.append(int(parse_item[i]))
 
         # 2. f_layer
-        elif (parse_item[0] == "f_layer"):
+        elif parse_item[0] == "f_layer":
             new_layer = list()
             for i in range(1, len(parse_item)):
                 new_layer.append(int(parse_item[i]))
@@ -248,7 +250,7 @@ class Tensorflow_Machine:
             self.filter_layers.append(new_layer)
 
         # 3. f_stride
-        elif (parse_item[0] == "f_stride"):
+        elif parse_item[0] == "f_stride":
             new_layer = list()
             for i in range(1, len(parse_item)):
                 new_layer.append(int(parse_item[i]))
@@ -256,7 +258,7 @@ class Tensorflow_Machine:
             self.filter_strides.append(new_layer)
 
         # 4. m_ksize
-        elif (parse_item[0] == "m_ksize"):
+        elif parse_item[0] == "m_ksize":
             new_layer = list()
             for i in range(1, len(parse_item)):
                 new_layer.append(int(parse_item[i]))
@@ -264,7 +266,7 @@ class Tensorflow_Machine:
             self.max_pool_ksizes.append(new_layer)
 
         # 5. m_stride
-        elif (parse_item[0] == "m_stride"):
+        elif parse_item[0] == "m_stride":
             new_layer = list()
             for i in range(1, len(parse_item)):
                 new_layer.append(int(parse_item[i]))
@@ -282,16 +284,15 @@ class Tensorflow_Machine:
                 raise ValueError
 
         # 6. 1d_size
-        elif (parse_item[0] == "1d_size"):
+        elif parse_item[0] == "1d_size":
             self.reshaped_1d_layer = int(parse_item[1])
 
         # 7. pad_type
-        elif (parse_item[0] == "pad_type"):
+        elif parse_item[0] == "pad_type":
             self.padding_type = str(parse_item[1])
 
-
         # 8. std_dev
-        elif (parse_item[0] == "std_dev"):
+        elif parse_item[0] == "std_dev":
             self.filter_stddev = float(parse_item[1])
 
         # Default
@@ -305,12 +306,12 @@ class Tensorflow_Machine:
         parse_item = line.replace("[", "").replace("]", "").split(",")
 
         # 1. item
-        if (parse_item[0] == "item"):
+        if parse_item[0] == "item":
             for i in range(1, len(parse_item)):
                 self.one_dim_layer.append(int(parse_item[i]))
 
         # 2. for
-        elif (parse_item[0] == "for"):
+        elif parse_item[0] == "for":
             for layer in range(int(parse_item[1]), int(parse_item[2]), int(parse_item[3])):
                 self.one_dim_layer.append(layer)
 
@@ -363,30 +364,30 @@ class Tensorflow_Machine:
                     continue
 
                 # CNN
-                if ("CNN" in line):
+                if "CNN" in line:
                     mode = "CNN"
                 # DL
-                elif ("DL" in line):
+                elif "DL" in line:
                     mode = "DL"
 
                 # Catch { (Start Record)
-                if ("{" in line):
+                if "{" in line:
                     recording = True
                     continue
 
                 # Catch } (End Record)
-                elif ("}" in line):
+                elif "}" in line:
                     recording = False
                     continue
 
-                if (recording is True):
+                if recording is True:
                     trimmed_line = line.replace(" ", "").replace("\r", "").replace("\n", "").replace("\t", "")
                     # CNN
-                    if ("CNN" == mode):
+                    if "CNN" == mode:
                         self._record_cnn(trimmed_line)
 
                     # DL
-                    elif ("DL" == mode):
+                    elif "DL" == mode:
                         self._record_1d(trimmed_line)
 
             open_file.close()
@@ -394,7 +395,7 @@ class Tensorflow_Machine:
         return
 
     def _get_datas_and_create_batches(self):
-        if (self.mnist is False):
+        if self.mnist is False:
             self.Xtrain = list()
             self.Ytrain = list()
 
@@ -459,7 +460,7 @@ class Tensorflow_Machine:
                              wlist=False,
                              final_reshape_to_1d=False,
                              stddev=0.01):
-        if (self.print_created_layer is True):
+        if self.print_created_layer is True:
             print("CNN", filter_layersize_array, filter_stride_array, max_pool_ksize,
                   max_pool_stride_array, layer_index)
 
@@ -474,10 +475,10 @@ class Tensorflow_Machine:
         output_array = tf.nn.max_pool(L, ksize=max_pool_ksize, strides=max_pool_stride_array, padding=padding_type)
         output_array = tf.nn.dropout(output_array, keep_prob=dropout_ratio)
 
-        if (wlist is not False):
+        if wlist is not False:
             wlist.append(W)
 
-        if (final_reshape_to_1d is True):
+        if final_reshape_to_1d is True:
             output_layersize = self.reshaped_1d_layer
             output_array = tf.reshape(output_array, [-1, output_layersize])
 
@@ -498,7 +499,7 @@ class Tensorflow_Machine:
                          dropout_ratio=1.0,
                          input_dtype=tf.float64):
 
-        if (self.print_created_layer is True):
+        if self.print_created_layer is True:
             print("1Dim", input_layersize_array, output_layersize_array, layer_index)
 
         ## Weight / Bias
@@ -519,14 +520,14 @@ class Tensorflow_Machine:
             output_array = tf.nn.relu(tf.matmul(input_array, W))
             # output_array = tf.matmul(input_array, W)
 
-        if (wlist is not False):
+        if wlist is not False:
             wlist.append(W)
         if (blist is not False) and ((direct_bridge is False) or (i != 0)):
             blist.append(B)
-        if (llist is not False):
+        if llist is not False:
             llist.append(output_array)
 
-        if (direct_bridge is True):
+        if direct_bridge is True:
             return output_array, W
 
         return output_array, W, B
@@ -537,7 +538,7 @@ class Tensorflow_Machine:
                            blist,
                            llist,
                            direct_bridge=False):
-        if (direct_bridge is False):
+        if direct_bridge is False:
             whist = tf.summary.histogram("weights" + "0", wlist[0])
             bhist = tf.summary.histogram("bias" + "0", blist[0])
         else:
@@ -546,7 +547,7 @@ class Tensorflow_Machine:
         for i in range(1, total_layer - 1):
             whist = tf.summary.histogram("weights" + str(i), wlist[i])
 
-            if (direct_bridge is True):
+            if direct_bridge is True:
                 bhist = tf.summary.histogram("bias" + str(i), blist[i - 1])
             else:
                 bhist = tf.summary.histogram("bias" + str(i), blist[i])
@@ -568,7 +569,7 @@ class Tensorflow_Machine:
             self.blist = list()
             self.llist = list()
 
-            if (self.num_conv2d_layers is not 0):
+            if self.num_conv2d_layers is not 0:
                 self.Ximage = tf.reshape(self.X, self.reshape_input_layer)
                 next_input = self.Ximage
             else:
@@ -586,7 +587,7 @@ class Tensorflow_Machine:
                                                              stddev=self.filter_stddev)
 
             # 2. last conv2d (change 2d * channel shape to 1d)
-            if (self.num_conv2d_layers is not 0):
+            if self.num_conv2d_layers is not 0:
                 next_input, _, W, B = self._create_cnn_2d_layer(next_input,
                                                                 self.filter_layers[self.num_conv2d_layers - 1],
                                                                 self.filter_strides[self.num_conv2d_layers - 1],
@@ -684,7 +685,7 @@ class Tensorflow_Machine:
                 print("Fail to restore from previous checkpoint")
                 print("It might be happened in shrinking or expanding layers")
                 isyes = input("type [init] if you want to initilize all processes : ")
-                if (isyes.lower() == "init"):
+                if isyes.lower() == "init":
                     self.sess.run(tf.global_variables_initializer())
                     print("Initialize variables")
                 else:
@@ -695,7 +696,7 @@ class Tensorflow_Machine:
         return
 
     def _get_next_batch(self):
-        if (self.mnist is False):
+        if self.mnist is False:
             X_batch, Y_batch = self.sess.run([self.X_batches, self.Y_batches])
         else:
             X_batch, Y_batch = self.mnist.train.next_batch(self.batch_size)  # for mnist
@@ -703,7 +704,7 @@ class Tensorflow_Machine:
         return X_batch, Y_batch
 
     def setting_graph_for_training(self):
-        if (self.printgraph is not True):
+        if self.printgraph is not True:
             return
 
         self.Xgraph = list()
@@ -727,7 +728,7 @@ class Tensorflow_Machine:
             c, merge_result, _ = self.sess.run([self.cost, self.merged, self.optimizer], feed_dict=feed_dict)
             avg_cost += c / self.total_batch
 
-        if (avg_cost < min_cost):
+        if avg_cost < min_cost:
             min_cost = avg_cost
 
         if (self.snapshotmincost is True) and (self.snapshotmincostpath != "NULL"):
@@ -756,7 +757,7 @@ class Tensorflow_Machine:
 
     def training_model(self,
                        training_epochs=-1):
-        if (training_epochs < 1):
+        if training_epochs < 1:
             training_epochs = self.training_epochs
 
         coord = tf.train.Coordinator()
@@ -794,18 +795,18 @@ class Tensorflow_Machine:
         # print_result(predict_val, self.Ytest, self.print_result_interval)
         # print_data(predict_val, "test.csv")
 
-        if (self.printalllayer is True):
+        if self.printalllayer is True:
             print_all_layer_function(self.sess, self.printalllayer_file_name, self.wlist, self.blist,
                                      self.one_dim_layer_size, self.direct_bridge)
 
-        if (self.showcost is True):
+        if self.showcost is True:
             print_cost(self.Xgraph, self.Ygraph, self.showcost_file_name)
 
-        if (self.printgraph is True):
+        if self.printgraph is True:
             plt.plot(self.Xgraph, self.Ygraph)
             plt.show()
 
-        return predict_val
+        return predict_val, self.Ytest
 
     def get_test_result(self):
         return self.Ytest
@@ -813,6 +814,11 @@ class Tensorflow_Machine:
     def get_num_train_test_data(self):
         return self.dataset_size, self.testdata_size
 
+    def destory_all(self):
+        tf.reset_default_graph()
+        self.sess.close()
+
+        return
 
 ''' // Currently not use
 # Function Cost predictor
