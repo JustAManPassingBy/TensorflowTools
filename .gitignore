@@ -5,3 +5,4 @@ Train/tmp
 *.gz
 Train/logs
 Train/__pycache__
+*.tmp
