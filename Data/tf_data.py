@@ -220,7 +220,7 @@ def make_data (data_list, startdate, enddate, filename, output_count, num_data, 
             row_array=list()
 
             # input write
-            for i in range (2, 50) :
+            for i in range (2, total_index) :
                 #my_file.write(str(round(prev_list[i] - prev_prev_list[i], 2)) + "\t")
                 row_array.append(prev_list[i] / 10)
                 #if (prev_list[i] >= 0) :

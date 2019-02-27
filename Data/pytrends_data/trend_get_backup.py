@@ -1,5 +1,6 @@
 import datetime
 import os
+import csv
 
 def append_data_into_list(initlist, appendlist, end_date, decrease_date, isfirst=False):
     for data in appendlist:
@@ -51,21 +52,29 @@ def classify_col_item(col, isint = True):
 
     return col_item
 
-def restore_all_item_from_backup(prevlist, filename, isfirst):
+def restore_all_item_from_backup(prevlist, filename, isfirst, count):
     startdate = datetime.datetime.strptime("2018-12-31", "%Y-%m-%d")
     datediff = datetime.timedelta(days=1)
 
     with open(filename, 'r', encoding='utf-8', newline='\n') as file:
-        itemcnt = int(file.readline())
-        opt = int(file.readline())
-        lines = file.readlines()
-
-        if (itemcnt < 4383) or (opt < -1):
-            return prevlist, isfirst
-
-        if filename is "trend_data.csv":
+        if filename == "trend_data.csv":
             print("skip trend data")
-            return prevlist, isfirst
+            return prevlist, isfirst, count
+
+        if filename == "trend_get_backup.py":
+            print("skip python")
+            return prevlist, isfirst, count
+
+        try :
+            itemcnt = int(file.readline())
+            opt = int(file.readline())
+        except ValueError :
+            return prevlist, isfirst, count
+        
+        if (itemcnt < 4383) or (opt < -1):
+            return prevlist, isfirst, count
+        
+        lines = file.readlines()
 
         nextlist, isfirst = append_data_into_list(prevlist, lines, startdate, datediff, isfirst=isfirst)
 
@@ -73,7 +82,7 @@ def restore_all_item_from_backup(prevlist, filename, isfirst):
 
         file.close()
 
-    return nextlist, isfirst
+    return nextlist, isfirst, count + 1
 
 
 def write_all_list_in_csv(writelist, filename, call_count=-1):
@@ -98,8 +107,10 @@ newlist = list()
 isfirst = True
 
 file_list = os.listdir("./")
+items = 0
 
 for file_name in file_list:
-    newlist, isfirst = restore_all_item_from_backup(newlist, file_name, isfirst)
+    newlist, isfirst, items = restore_all_item_from_backup(newlist, file_name, isfirst, items)
 
 write_all_list_in_csv(newlist, "trend_data.csv", -1)
+print("item : " + str(items))
