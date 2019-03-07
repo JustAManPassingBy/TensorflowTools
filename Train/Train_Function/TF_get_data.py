@@ -265,9 +265,22 @@ def get_raw_data_from_csv (X_arr, Y_arr, filename, drop_yarr = False, skipfirstl
 # in train data, you have to write X_arr, Y_arr
 # in test data, you have to skip Y_arr
 # in csv, We assume first law is name of array
-def get_raw_data_from_tsv (X_arr, Y_arr, filename, X_size = -1,Y_size = 1, drop_yarr = False, skipfirstline = True) :
+# Data
+# file line : [Input layers ...] [output Layers]
+# Result    : [Input... , Padding Zero] / [Output]
+def get_raw_data_from_tsv (X_arr, 
+                           Y_arr, 
+                           filename, 
+                           X_size = -1,
+                           Y_size = 0, 
+                           drop_yarr = False, 
+                           skipfirstline = True,
+                           padding_zero=0, 
+                           delimiter='\t') :
+    adjustdate = datetime.timedelta(days=0)
+
     with open(filename, encoding="utf-8") as csvDataFile :
-        tsv_reader = csv.reader(csvDataFile, delimiter='\t')
+        tsv_reader = csv.reader(csvDataFile, delimiter=delimiter)
         
         for row in tsv_reader :
             # skip first line
@@ -327,6 +340,10 @@ def get_raw_data_from_tsv (X_arr, Y_arr, filename, X_size = -1,Y_size = 1, drop_
                         tem_arr.append(float(1.0))
                         
                     Y_arr.append(tem_arr)
+
+                # padding 0 in X_arr
+                for i in range(padding_zero):
+                    row_items.append(float(0))
 
                 # add X_arr
                 X_arr.append(row_items)

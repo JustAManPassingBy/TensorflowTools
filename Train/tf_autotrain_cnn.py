@@ -14,6 +14,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
 ''' Collect Mnist DATA '''
 #from tensorflow.examples.tutorials.mnist import input_data
 #mnist = input_data.read_data_sets("MNIST_data", one_hot=True)
+
 # model 1
 sess = tf.Session()
 
@@ -28,13 +29,13 @@ tm1_result, answer = tm1.test_model()
 tm1.destory_all()
 
 sess = tf.Session()
-
+'''
 # model 2
 tm2 = Tensorflow_Machine(sess, "model2",
                          input_file = "models_attribute/model2.txt",
                          layer_file = "models_layers/model2.txt")
 
-tm2.training_model(training_epochs=-1)
+#tm2.training_model(training_epochs=100000)
 
 tm2_result, _ = tm2.test_model()
 
@@ -47,12 +48,127 @@ tm3 = Tensorflow_Machine(sess, "model3",
                          input_file="models_attribute/model3.txt",
                          layer_file="models_layers/model3.txt")
 
-tm3.training_model(training_epochs=-1)
+#tm3.training_model(training_epochs=100000)
 
 tm3_result, _ = tm3.test_model()
 
 tm3.destory_all()
+'''
+''' 9 consultants'''
+'''
+sess = tf.Session()
 
+tm = Tensorflow_Machine(sess, "model1",
+                         input_file="models_attribute/model2.txt",
+                         layer_file="models_layers/model2.txt")
+
+tm.training_model(training_epochs=-1)
+
+tm1_result, answer = tm.test_model()
+
+tm.destory_all()
+
+
+sess = tf.Session()
+
+tm = Tensorflow_Machine(sess, "model1",
+                         input_file="models_attribute/model2.txt",
+                         layer_file="models_layers/model2.txt")
+
+tm.training_model(training_epochs=-1)
+
+tm2_result, answer = tm.test_model()
+
+tm.destory_all()
+
+
+sess = tf.Session()
+
+tm = Tensorflow_Machine(sess, "model1",
+                         input_file="models_attribute/model2.txt",
+                         layer_file="models_layers/model2.txt")
+
+tm.training_model(training_epochs=-1)
+
+tm3_result, answer = tm.test_model()
+
+tm.destory_all()
+sess = tf.Session()
+
+tm = Tensorflow_Machine(sess, "model1",
+                         input_file="models_attribute/model2.txt",
+                         layer_file="models_layers/model2.txt")
+
+tm.training_model(training_epochs=-1)
+
+tm4_result, answer = tm.test_model()
+
+tm.destory_all()
+
+
+sess = tf.Session()
+
+tm = Tensorflow_Machine(sess, "model1",
+                         input_file="models_attribute/model2.txt",
+                         layer_file="models_layers/model2.txt")
+
+tm.training_model(training_epochs=-1)
+
+tm5_result, answer = tm.test_model()
+
+tm.destory_all()
+
+
+sess = tf.Session()
+
+tm = Tensorflow_Machine(sess, "model1",
+                         input_file="models_attribute/model2.txt",
+                         layer_file="models_layers/model2.txt")
+
+tm.training_model(training_epochs=-1)
+
+tm6_result, answer = tm.test_model()
+
+tm.destory_all()
+
+
+sess = tf.Session()
+
+tm = Tensorflow_Machine(sess, "model1",
+                         input_file="models_attribute/model2.txt",
+                         layer_file="models_layers/model2.txt")
+
+tm.training_model(training_epochs=-1)
+
+tm7_result, answer = tm.test_model()
+
+tm.destory_all()
+
+
+sess = tf.Session()
+
+tm = Tensorflow_Machine(sess, "model1",
+                         input_file="models_attribute/model2.txt",
+                         layer_file="models_layers/model2.txt")
+
+tm.training_model(training_epochs=-1)
+
+tm8_result, answer = tm.test_model()
+
+tm.destory_all()
+
+
+sess = tf.Session()
+
+tm = Tensorflow_Machine(sess, "model1",
+                         input_file="models_attribute/model2.txt",
+                         layer_file="models_layers/model2.txt")
+
+tm.training_model(training_epochs=-1)
+
+tm9_result, answer = tm.test_model()
+
+tm.destory_all()
 
 # Make result
 results = list()
@@ -60,8 +176,14 @@ results = list()
 results.append(tm1_result)
 results.append(tm2_result)
 results.append(tm3_result)
+results.append(tm4_result)
+results.append(tm5_result)
+results.append(tm6_result)
+results.append(tm7_result)
+results.append(tm8_result)
+results.append(tm9_result)
 
-num_result = 3
+num_result = 9
 
 cpm = CP_Machine(answer,
                  results,
@@ -69,3 +191,4 @@ cpm = CP_Machine(answer,
                  num_result)
 
 cpm.report()
+'''

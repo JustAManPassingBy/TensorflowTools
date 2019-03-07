@@ -58,6 +58,7 @@ class Tensorflow_Machine:
         self.input_arraysize = 48
         self.output_arraysize = 2
         self.cost_list_size = 50
+        self.input_padding_zero = 0
 
         self.train_file_name = "train.txt"
         self.test_file_name = "test.txt"
@@ -143,6 +144,8 @@ class Tensorflow_Machine:
                     print(" [_get_variables] Skipped Line : [" + str(line) + "]")
 
             open_file.close()
+
+        self.input_arraysize += self.input_padding_zero
 
         return
 
@@ -406,7 +409,8 @@ class Tensorflow_Machine:
                                                              X_size=self.dataset_size,
                                                              Y_size=self.output_arraysize,
                                                              drop_yarr=False,
-                                                             skipfirstline=False)
+                                                             skipfirstline=False,
+                                                             padding_zero=self.input_padding_zero)
 
             # create Batches(Slice of train data)
             ## Normal batch
@@ -429,7 +433,8 @@ class Tensorflow_Machine:
                                                            X_size=self.testdata_size,
                                                            Y_size=self.output_arraysize,
                                                            drop_yarr=False,
-                                                           skipfirstline=False)
+                                                           skipfirstline=False,
+                                                           padding_zero=self.input_padding_zero)
 
         else:
             # For mnist
@@ -509,7 +514,7 @@ class Tensorflow_Machine:
             B = tf.Variable(tf.random_normal([output_layersize_array], dtype=input_dtype),
                             name=('B' + str(layer_index)))
         else:
-            W = tf.Variable(tf.convert_to_tensor(np.eye(layer_size[i], dtype=np.float64)), name='W0')
+            W = tf.Variable(tf.convert_to_tensor(np.eye(input_layersize_array, dtype=np.float64)), name='W0')
 
         ## Layer Result
         if (direct_bridge is False) or (layer_index != 0):
@@ -731,6 +736,7 @@ class Tensorflow_Machine:
         if avg_cost < min_cost:
             min_cost = avg_cost
 
+        # Todo : Need to be removed
         if (self.snapshotmincost is True) and (self.snapshotmincostpath != "NULL"):
             saver.save(self.sess, self.snapshotmincostpath)
 

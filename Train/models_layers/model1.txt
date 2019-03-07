@@ -1,0 +1,36 @@
+# Option : CNN
+## Please follow sequences below
+# 1. conv      : initial convert array
+# 2. f_layer    : filter's layer size
+# 3. f_stride   : filter's stride
+# 4. m_ksize   : max_pool -> kernel size
+# 5. m_stride  : max_pool -> stride
+## 2 ~ 5 creates 1 layer, omitted some items raise error
+## Items below does not follow sequences
+## However, you should notice specific line's option does not impact on above lines 
+# 6. 1d_size : Final reshaped 1d's output's size
+# 7. pad_type : padding_type
+# 8. std_dev : standard_derivation of var
+CNN {
+	conv, [-1, 5, 13, 1]
+	f_layer, [3, 3, 1, 20]
+	f_stride, [1, 1, 1, 1]
+	m_ksize, [1, 1, 1, 1]
+	m_stride, [1, 1, 1, 1]
+	f_layer, [3, 3, 20, 48]
+	f_stride, [1, 1, 1, 1]
+	m_ksize, [1, 1, 1, 1]
+	m_stride, [1, 1, 1, 1]
+	1d_size, 3120
+}
+
+## DL
+# Need not to Follow sequences
+# item : just append all layer
+# for   : USAGE = for, A, B, C = { for layer in range(A, B, C) }
+DL
+{
+	item, 3120
+	for, 3120, 2, -567
+	item, 2
+}
