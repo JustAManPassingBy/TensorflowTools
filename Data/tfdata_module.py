@@ -1,15 +1,19 @@
 import numpy as np
+import pandas as pd
 import datetime
 import csv
 
 class Data_Manager:
-    def __init__(self):
+    def __init__(self,
+                 initialize_type="NUMBER"):
+        
+        self._initialize_list(initialize_type)
         
         return
 
     
-    def initialize_list(self,
-                        initialize_type="NUMBER"): # NUMBER, DATE ...        
+    def _initialize_list(self,
+                         initialize_type="NUMBER"): # NUMBER, DATE ...        
         if initialize_type is "NUMBER" :
             self.data_type = "NUMBER"
         elif initialize_type is "DATE" :
@@ -18,29 +22,257 @@ class Data_Manager:
             print("initialize_list : Unknown initialiize type : " + str(initialize_type))
             raise(ValueError)
 
+        self.data_is_first = True
+
         return
 
-    def append_list(self,
-                    filename, # We only get csv type data
-                    item_type, #  list that consist of {Valid, Invaild}
-                    index_locate=-1, # -1 means there are no index 
-                    skip_row=0): 
-        with open(filename, encoding="utf-8") as csvDataFile:
-            csv_reader = csv.reader(csvDataFile)
+    def append_csv_list(self,
+                        filename, # We only get csv type data
+                        skiprows=False, # Use (1), ([0, 1, 3, ....])
+                        usecols=False, # Use (1), ([0, 1, 3, ....])
+                        index_col=False) : # False means there are no index 
+        
+        csv_result = pd.read_csv(filename,  
+                                 skiprows=skiprows,
+                                 index_col=index_col,
+                                 usecols=usecols)
 
-            row_index = 1
+        if (self.data_is_first is True):
+            self.pandas_list=csv_result
+            self.data_is_first = False
+        else :
+            self.pandas_list = pd.concat([self.pandas_list, csv_result], axis=1)     
 
-            for csv_row in csv_reader:
-                if skip_row > 0:
-                    skip_row -= 1
-                    continue
-                
-                if index_locate is not -1 :
-                    
-                
-
-                row_index += 1
         return
+
+    def _make_data(self,
+                   data_list, 
+                   filename, 
+                   output_count) :
+
+    total_index = len(data_list[0])
+    valid_item = 0
+    total_item = len(data_list)
+
+    # will use TSV instead of CSV
+    with open(filename, 'w', encoding='utf-8', newline='\n') as csv_file :
+        csv_writer = csv.writer(csv_file, delimiter='\t')
+
+        for each_list in data_list :
+            row_array=list()
+
+            # input / output write
+            for i in range (0, total_index) :
+                if (i == 1) : continue
+
+                row_array.append(each_list[i])
+            
+            # add newline
+            csv_writer.writerow(row_array)
+
+            valid_item += 1
+        
+
+    print(":: Make File info ::")
+    print("File : " + filename)
+    print("items : ", valid_item, " / ", total_item, " index(input) : ", total_index - output_count, " index(output) : ", output_count)
+
+    return
+
+    def get_sample_from_csv(self,
+                            train_file,
+                            test_file,
+                            output_count):
+        # sort by 2nd[1] index
+        sort_pandas = self.pandas_list.sort_values(by=self.pandas_list.columns[1])
+
+        train_pandas = sort_pandas.loc[ sort_pandas[sort_pandas.columns[1]] == 0, : ]
+        test_pandas = sort_pandas.loc[ sort_pandas[sort_pandas.columns[1]] == 0, : ]
+
+        # numpy
+        train_np = train_pandas.values()
+        test_np = test_pandas
+
+        self._make_data(train_np, train_file, output_count)
+        self._make_data(test_np, test_file, output_count)
+    
+    '''
+    def _restore_trend_list_from_file(self,
+                                      filename):
+        
+        return
+
+    def restore_trend_data(self,
+                           filename):
+        read_list = list()
+        read_list = _restore_trend_list_from_file(filename)
+
+
+
+    # each list : ["keyword", suggestion_id]
+    # Return    : ["Keyword", suggestion_id, restore_success(T/F)]
+    def _restore_trend_list(self,
+                            read_list):
+        scan_trend_list = list()
+        
+        # scan all items
+
+        for read_item in read_list:
+            if read_item in scan_trend_list:
+                # restore process
+
+            else :
+                read_item.append(False) 
+
+        return read_list
+
+    def _request_google_trend_data_once(self,
+                                        startdate,
+                                        enddate,
+                                        kw_list,
+                                        catinfo,
+                                        suggestion_ids):
+        #pytrends = TrendReq(hl='en-US',tz=360)
+        pytrends = TrendReq(hl='ko', tz=540)
+        #pytrends = TrendReq(hl='en-US', tz=360, proxies = {'https': 'https://34.203.233.13:80'})
+
+        if (suggestion_id != -1) :
+            # Get suggestion keywords from original keyword if required (suggestion_id is not -1)
+            keywords_suggestions = pytrends.suggestions(keyword=keyword[0])
+
+            if (len(keywords_suggestions) is 0) :
+                # Case could not find keyword suggestion
+                keywords_list = keyword
+            else :
+                # Case find keyword suggestion, with using suggestion id
+                keywords_list = list()
+                keywords_list.append(keywords_suggestions[0].get("mid"))
+        else :
+            # If suggestion is not required (suggestion_id is -1)
+            keywords_list = keyword
+            
+        #print("Keyword :: " + str(keywords_list))
+    
+        ## options for build_payload
+        # cat        : category (number (0 = all, ...))
+        #               SEE categories https://github.com/pat310/google-trends-api/wiki/Google-Trends-Categories
+        # geo        : Conuntry (United state = 'US'), defaults to world all
+        # tz         : timezone offset (??)
+        # timeframe  : format should be YYYY-MM-DD YYYY-MM-DD"
+        # gprop      : google property (images, news, youtubes)
+        pytrends.build_payload(kw_list=keywords_list, cat=catinfo, timeframe=str(startdate + " " + enddate), geo='KR', gprop='')
+
+        getdatainfo = pytrends.interest_over_time()
+
+        # Delete 'isPartial' column
+        #del getdatainfo['isPartial']
+
+        print(getdatainfo)
+
+        data_list = np.array(getdatainfo)
+
+        # reverse order
+        data_list = np.flipud(data_list)
+
+        end_date = datetime.datetime.strptime(enddate, "%Y-%m-%d")
+        decrease_date = datetime.timedelta(days = 1)
+
+        return initlist, len(data_list), data_list
+
+    def _request_google_trend_data(self,
+                                   pd_list,
+                                   startdate
+                                   read_list,
+                                   catinfo=0):
+         # (each repeat count gets 6 month datas)
+        repeat_count = 2 * 12
+    
+        start_year = 2018
+
+        # even = YYYY-06-01 ~ YYYY-12-31
+        # odd  = YYYY-01-01 ~ YYYY-05-31
+        startdate_even = '-06-01'
+        enddate_even = '-12-31'
+
+        startdate_odd = '-01-01'
+        enddate_odd = '-05-31'
+
+        print("Keyword : " + str(keyword))
+
+        items = 0
+        totallist = list()
+
+        for i in range(0, repeat_count) :
+            #print("Act : " + str(i))
+            cur_year = int(start_year - (i / 2))
+
+            if (i % 2 == 0) :
+                # Even
+                initlist, item_cnt, curlist = self._request_google_trend_data_once(initlist, str(str(cur_year) + startdate_even), str(str(cur_year) + enddate_even),
+                                        keyword, catinfo, suggestion_id, isfirst = original_isfirst)
+            else :
+                # Odd
+                initlist, item_cnt, curlist = _request_google_trend_data_once(initlist, str(str(cur_year) + startdate_odd),  str(str(cur_year) + enddate_odd),
+                                        keyword, catinfo, suggestion_id, isfirst = original_isfirst)
+            items += item_cnt
+        
+        for curitem in curlist:
+            totallist.append(curitem)
+
+        # We need time interval between getting pytrend info, so that avoid blocking from GOOGLE.
+        time.sleep(60)
+
+    print("Done !! item count : " + str(items))
+    
+    return initlist, (call_count + 1)
+
+
+    def _get_google_trend_data(self,
+                               read_item,
+                               pending_items,
+                               collect_lists,
+                               is_last=False):
+        if (is_last is False):
+            pending_items.append(read_item[0:-2])
+            collect_lists += 1
+
+        if (is_last is True) or (collect_lists == 5):
+            self._request_google_trend_data(pending_items)
+            collect_lists = 0
+            pending_items = list()
+
+        return collect_lists, pending_items
+
+    def _get_google_trend_list(self,
+                               read_list):
+
+        current_trend_need_items = 0
+        pending_read_items=list()
+
+        for read_item in read_list:
+            if read_item[2] is False :
+                current_trend_need_items, pendinig_read_items = self._get_google_trend_data(read_item,
+                                                                                            pending_read_items,
+                                                                                            current_trend_need_items)
+        if (current_trend_need_items != 0) :
+            _ , _ = self._get_google_trend_data(False,
+                                            pending_read_items,
+                                            current_trend_need_items,
+                                            is_last=True)
+
+        return
+
+    def get_google_trends_read_list(self,
+                                    filename):
+        self.trend_read_list = pd.read_csv(filename).to_numpy()
+
+        self.trend_read_list = self._restore_trend_list(self.trend_read_list)
+
+        self._get_google_trend_list(self.trend_read_list)
+
+        
+
+
 
 
 def get_google_data_from_csv_file(prev_list, filename, original_item_num) :
@@ -222,8 +454,8 @@ def clipping_all_data(data_arr, idx, savename) :
     # clip : [col] matches with divider[col - 1]
     return data_arr, divider
 
-def make_data (data_list, startdate, enddate, filename, output_count, num_data, multiple_data) :
-    ''' Divide with tab '''
+def _make_data_with_date (data_list, startdate, enddate, filename, output_count, num_data, multiple_data) :
+    # Divide with tab 
     total_item = 0
     valid_item = 0
     
@@ -296,129 +528,8 @@ def make_data (data_list, startdate, enddate, filename, output_count, num_data, 
 
     
     return
+    '''
 
-
-datalist = list()
-
-# num_datas
-prev_num_datas = 2
-
-muldata = 100
-
-output_loop = 1
-
-get_data_from_csv_file(datalist, "코스피지수 내역.csv", isfirst = True) # 1
-num_datas = get_google_data_from_csv_file(datalist, "trend_data.csv", prev_num_datas)
-
-'''
-# multiple(row item)
-multiple = 4
-
-# 0 : date
-# (n - 1) * 4 + 1 ~ (n) * 4
-
-get_data_from_csv_file(datalist, "S&P 500 내역.csv")
-get_data_from_csv_file(datalist, "나스닥 내역.csv")
-get_data_from_csv_file(datalist, "Russell 2000 내역.csv")
-get_data_from_csv_file(datalist, "CBOE Volatility Index 내역.csv") # 5
-
-get_data_from_csv_file(datalist, "_캐나다 S&P_TSX 내역.csv") # 6
-get_data_from_csv_file(datalist, "브라질 보베스파 내역.csv") # 7
-get_data_from_csv_file(datalist, "S&P_BMV IPC 내역.csv") # 8
-get_data_from_csv_file(datalist, "DAX 내역.csv") # 9
-get_data_from_csv_file(datalist, "영국 FTSE 내역.csv") # 10
-
-print ("1/3")
-
-get_data_from_csv_file(datalist, "프랑스 CAC 내역.csv") # 11
-get_data_from_csv_file(datalist, "네덜란드 AEX 내역.csv") # 13
-get_data_from_csv_file(datalist, "스페인 IBEX 내역.csv") # 14
-get_data_from_csv_file(datalist, "ITALY.csv") # 15
-get_data_from_csv_file(datalist, "스위스 SMI 내역.csv") # 16
-
-get_data_from_csv_file(datalist, "벨기에 BEL 내역.csv") # 18
-get_data_from_csv_file(datalist, "스웨덴 OMXS 내역.csv") # 20
-get_data_from_csv_file(datalist, "러시아 MOEX Russia 내역.csv") # 21
-get_data_from_csv_file(datalist, "RTSI 지수 내역.csv") # 22
-get_data_from_csv_file(datalist, "폴란드 WIG 20 내역.csv") # 23
-
-print("2/3")
-
-get_data_from_csv_file(datalist, "TA 35 내역.csv") # 26
-get_data_from_csv_file(datalist, "닛케이 내역.csv") # 28
-get_data_from_csv_file(datalist, "호주 S&P_ASX 내역.csv") # 29
-get_data_from_csv_file(datalist, "상하이종합 내역.csv") # 30
-get_data_from_csv_file(datalist, "항셍 내역.csv") # 34
-
-get_data_from_csv_file(datalist, "코스피지수 내역.csv") # 37
-get_data_from_csv_file(datalist, "인도네시아 IDX 내역.csv") # 38
-get_data_from_csv_file(datalist, "Nifty 50 내역.csv") # 39
-get_data_from_csv_file(datalist, "CSE All-Share 내역.csv") # 42
-
-num_datas += 29 * multiple
-print("read 1.9 done")
-
-datalist, muldata = clipping_all_data(datalist, num_datas, "item data.txt")
-
-
-# 1.1
-get_data_from_csv_file(datalist, "ITALY.csv", isfirst = True)
-get_data_from_csv_file(datalist, "TA 35 내역.csv")
-num_datas += 2 * multiple
-print("read 1.1 done")
-
-
-# 1.2
-get_data_from_csv_file(datalist, "코스피지수 내역.csv")
-get_data_from_csv_file(datalist, "_캐나다 S&P_TSX 내역.csv")
-get_data_from_csv_file(datalist, "브라질 보베스파 내역.csv")
-get_data_from_csv_file(datalist, "S&P_BMV IPC 내역.csv")
-get_data_from_csv_file(datalist, "DAX 내역.csv")
-get_data_from_csv_file(datalist, "영국 FTSE 내역.csv")
-get_data_from_csv_file(datalist, "프랑스 CAC 내역.csv")
-get_data_from_csv_file(datalist, "네덜란드 AEX 내역.csv")
-get_data_from_csv_file(datalist, "스페인 IBEX 내역.csv")
-get_data_from_csv_file(datalist, "벨기에 BEL 내역.csv")
-get_data_from_csv_file(datalist, "스웨덴 OMXS 내역.csv")
-get_data_from_csv_file(datalist, "폴란드 WIG 20 내역.csv")
-get_data_from_csv_file(datalist, "호주 S&P_ASX 내역.csv")
-get_data_from_csv_file(datalist, "항셍 내역.csv")
-get_data_from_csv_file(datalist, "인도네시아 IDX 내역.csv")
-get_data_from_csv_file(datalist, "Nifty 50 내역.csv")
-get_data_from_csv_file(datalist, "CSE All-Share 내역.csv")
-num_datas += 17 * multiple
-print("read 1.2 done")
-
-# 1.3
-get_data_from_csv_file(datalist, "다우존스 내역.csv")
-get_data_from_csv_file(datalist, "S&P 500 내역.csv")
-get_data_from_csv_file(datalist, "나스닥 내역.csv")
-get_data_from_csv_file(datalist, "Russell 2000 내역.csv")
-get_data_from_csv_file(datalist, "CBOE Volatility Index 내역.csv")
-get_data_from_csv_file(datalist, "스위스 SMI 내역.csv")
-num_datas += 6 * multiple
-print("read 1.3 done")
-
-# 1.4
-get_data_from_csv_file(datalist, "닛케이 내역.csv")
-get_data_from_csv_file(datalist, "상하이종합 내역.csv")
-num_datas += 2 * multiple
-
-# 1.9
-get_data_from_csv_file(datalist, "러시아 MOEX Russia 내역.csv")
-get_data_from_csv_file(datalist, "RTSI 지수 내역.csv")
-num_datas += 2 * multiple
-print("read 1.9 done")
-'''
-
-my_start_date = datetime.datetime.strptime("2007년 01월 01일", "%Y년 %m월 %d일")
-my_end_date = datetime.datetime.strptime("2017년 12월 31일", "%Y년 %m월 %d일")
-
-make_data(datalist, my_start_date, my_end_date, "train.txt", output_loop, num_datas, muldata)
-print("train data make done")
-
-my_test_start_date = datetime.datetime.strptime("2018년 01월 01일", "%Y년 %m월 %d일")
-my_test_end_date = datetime.datetime.strptime("2018년 12월 6일", "%Y년 %m월 %d일")
-
-make_data(datalist, my_test_start_date, my_test_end_date, "test.txt", output_loop, num_datas, muldata)
-print("test data make done")
+dm = Data_Manager()
+dm.append_csv_list(filename, False, False, False)
+dm.get_sample_from_csv("train.txt", "test.txt", 3)

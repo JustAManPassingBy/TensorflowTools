@@ -402,15 +402,18 @@ class Tensorflow_Machine:
             self.Xtrain = list()
             self.Ytrain = list()
 
+            self.train_index= list()
+
             # collect input data
-            self.Xtrain, self.Ytrain = get_raw_data_from_tsv(self.Xtrain,
-                                                             self.Ytrain,
-                                                             self.train_file_name,
-                                                             X_size=self.dataset_size,
-                                                             Y_size=self.output_arraysize,
-                                                             drop_yarr=False,
-                                                             skipfirstline=False,
-                                                             padding_zero=self.input_padding_zero)
+            self.Xtrain, self.Ytrain, self.train_index = get_raw_data_from_tsv(self.Xtrain,
+                                                                               self.Ytrain,
+                                                                               self.train_index,                                             
+                                                                               self.train_file_name,
+                                                                               X_size=self.dataset_size,
+                                                                               Y_size=self.output_arraysize,
+                                                                               drop_yarr=False,
+                                                                               skipfirstline=False,
+                                                                               padding_zero=self.input_padding_zero)
 
             # create Batches(Slice of train data)
             ## Normal batch
@@ -427,14 +430,17 @@ class Tensorflow_Machine:
             self.Xtest = list()
             self.Ytest = list()
 
-            self.Xtest, self.Ytest = get_raw_data_from_tsv(self.Xtest,
-                                                           self.Ytest,
-                                                           self.test_file_name,
-                                                           X_size=self.testdata_size,
-                                                           Y_size=self.output_arraysize,
-                                                           drop_yarr=False,
-                                                           skipfirstline=False,
-                                                           padding_zero=self.input_padding_zero)
+            self.test_index = list()
+
+            self.Xtest, self.Ytest, self.test_index = get_raw_data_from_tsv(self.Xtest,
+                                                                            self.Ytest,
+                                                                            self.test_index,
+                                                                            self.test_file_name,
+                                                                            X_size=self.testdata_size,
+                                                                            Y_size=self.output_arraysize,
+                                                                            drop_yarr=False,
+                                                                            skipfirstline=False,
+                                                                            padding_zero=self.input_padding_zero)
 
         else:
             # For mnist
@@ -661,13 +667,13 @@ class Tensorflow_Machine:
 
             # 10. Accuracy
             # Adjust correct prediction (set standards whether train result is same with expects)
-            self.correct_prediction = tf.equal(tf.argmax(self.hypothesis, 1), tf.argmax(self.Y, 1))
+            #self.correct_prediction = tf.equal(tf.argmax(self.hypothesis, 1), tf.argmax(self.Y, 1))
             # correct_prediction = tf.equal(self.hypothesis, self.Y)
-            # correct_prediction = tf.square(self.hypothesis -  self.Y)
+            self.correct_prediction = tf.square(self.hypothesis -  self.Y)
 
             # calculate Accuracy
-            self.accuracy = tf.reduce_mean(tf.cast(self.correct_prediction, self.input_dtype))
-            # accuracy = tf.reduce_mean(self.correct_prediction)
+            #self.accuracy = tf.reduce_mean(tf.cast(self.correct_prediction, self.input_dtype))
+            self.accuracy = tf.reduce_mean(self.correct_prediction)
 
         return
 
@@ -820,6 +826,7 @@ class Tensorflow_Machine:
     def get_num_train_test_data(self):
         return self.dataset_size, self.testdata_size
 
+    # destroy
     def destory_all(self):
         tf.reset_default_graph()
         self.sess.close()

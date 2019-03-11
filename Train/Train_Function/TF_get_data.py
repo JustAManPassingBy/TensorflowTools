@@ -270,14 +270,17 @@ def get_raw_data_from_csv (X_arr, Y_arr, filename, drop_yarr = False, skipfirstl
 # Result    : [Input... , Padding Zero] / [Output]
 def get_raw_data_from_tsv (X_arr, 
                            Y_arr, 
+                           index_arr,
                            filename, 
                            X_size = -1,
                            Y_size = 0, 
                            drop_yarr = False, 
                            skipfirstline = True,
-                           padding_zero=0, 
+                           padding_zero=0,
                            delimiter='\t') :
     adjustdate = datetime.timedelta(days=0)
+
+    
 
     with open(filename, encoding="utf-8") as csvDataFile :
         tsv_reader = csv.reader(csvDataFile, delimiter=delimiter)
@@ -298,10 +301,6 @@ def get_raw_data_from_tsv (X_arr,
                     # skip something number here
                     if (data_count <= 0) :
                         continue
-
-                    # test for input_array = 4
-                    #if (data_count is 7) :
-                    #    break
                     
                     col = col.replace(",", "")
                     # check date
@@ -317,8 +316,11 @@ def get_raw_data_from_tsv (X_arr,
                         col_item = float(col[:-1])
                     else :
                         col_item = float(col)
-                    
-                    row_items.append(col_item)
+
+                    if (data_count == 1) :
+                        index_arr.append(col)
+                    else :
+                        row_items.append(col_item)
 
                 # pop last tab(Removed with improvement of file reads)
                 #row_items.pop()
@@ -355,6 +357,6 @@ def get_raw_data_from_tsv (X_arr,
     # clipping data (only X array)
     #X_arr = clipping_all_data(X_arr)
 
-    return X_arr, Y_arr
+    return X_arr, Y_arr, index_arr
 
 

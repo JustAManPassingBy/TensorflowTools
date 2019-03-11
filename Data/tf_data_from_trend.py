@@ -96,6 +96,8 @@ def get_pytrend_info(initlist, startdate, enddate, keyword, catinfo, suggestion_
     # Delete 'isPartial' column
     #del getdatainfo['isPartial']
 
+    print(getdatainfo)
+
     data_list = np.array(getdatainfo)
 
     # reverse order
@@ -234,12 +236,14 @@ def show_list_of_keyword(keyword) :
     return
     
 
+
 newlist = list()
 call = 0
 newlist, restore_call = restore_all_list_from_csv(newlist, "backup.csv")
 
 # 1
-newlist, call = get_all_pytrend_infos(newlist, ["주가"], 0, 0, call, restore_call, original_isfirst = True)
+newlist, call = get_all_pytrend_infos(newlist, ["주가", "주식", "상승", "하락", "전망"], 0, 0, call, restore_call, original_isfirst = True)
+'''
 newlist, call = get_all_pytrend_infos(newlist, ["주식"], 0, 0,  call, restore_call)
 newlist, call = get_all_pytrend_infos(newlist, ["상승"], 0, -1, call, restore_call)
 newlist, call = get_all_pytrend_infos(newlist, ["하락"], 0, -1, call, restore_call)
@@ -367,7 +371,7 @@ newlist, call = get_all_pytrend_infos(newlist, ["안전자산"], 0, -1, call, re
 newlist, call = get_all_pytrend_infos(newlist, ["부도"], 0, -1, call, restore_call)
 newlist, call = get_all_pytrend_infos(newlist, ["고위험"], 0, -1, call, restore_call)
 newlist, call = get_all_pytrend_infos(newlist, ["고수익"], 0, -1, call, restore_call)
-
+'''
 '''        
 # 1
 newlist, call = get_all_pytrend_infos(newlist, ["주가"], 0, 0, call, restore_call, original_isfirst = True)
