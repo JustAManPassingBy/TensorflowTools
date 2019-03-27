@@ -37,6 +37,8 @@ class Data_Manager:
                                  index_col=index_col,
                                  usecols=usecols)
 
+        csv_result = _extract_valid_columns(csv_result, self.data_is_first)
+
         if (self.data_is_first is True):
             self.pandas_list=csv_result
             self.data_is_first = False

@@ -66,7 +66,7 @@ num_result = 3
 '''
 
 # 9 consultants
-for i in range(1, 10):
+for i in range(2, 3):
     model_name = "model" + str(i)
     input_file_name = "models_attribute/model" + str(i) + ".txt"
     layer_file_name = "models_layers/model" + str(i) + ".txt"

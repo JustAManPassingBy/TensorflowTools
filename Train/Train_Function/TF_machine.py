@@ -74,7 +74,7 @@ class Tensorflow_Machine:
         self.snapshotmincost = False
         self.snapshotmincostpath = "/tmp/minmodel.ckpt"
 
-        self.input_dtype = tf.float64
+        self.input_dtype = tf.float32
 
         self.print_created_layer = False
 
@@ -90,6 +90,9 @@ class Tensorflow_Machine:
         ### Auto Calculated Options ###
         self.goal_descend_relation = int(self.cost_list_size / 2)
         self.total_batch = int(self.dataset_size / self.batch_size)
+
+        self.is_train = False
+        self.batch_norm = True
 
         return
 
@@ -160,6 +163,8 @@ class Tensorflow_Machine:
         self.max_pool_ksizes = []
         self.max_pool_strides = []
 
+        self.twod_multiple_resnet = []
+
         self.padding_type = 'SAME'
         self.filter_stddev = 0.01
 
@@ -169,12 +174,14 @@ class Tensorflow_Machine:
         # ! - [*batches, Y, X, *num_channels]
         # !  * Values recommand to set 1, as all batches and channels should not be skipped
 
-        ''' Your Layers '''
+        # Your Layers 
         # First (8 * 6 * 1 -> 8 * 6 * 10 -> 4 * 3 * 20)
         self.filter_layers.append([3, 3, 1, 20])
         self.filter_strides.append([1, 1, 1, 1])
         self.max_pool_ksizes.append([1, 2, 2, 1])
         self.max_pool_strides.append([1, 2, 2, 1])
+
+        self.twod_multiple_resnet.append(0)
 
         # Second (4 * 3 * 20 -> 4 * 3 * 48 -> 2 * 1 * 48)
         self.filter_layers.append([3, 3, 20, 48])
@@ -182,13 +189,15 @@ class Tensorflow_Machine:
         self.max_pool_ksizes.append([1, 2, 3, 1])
         self.max_pool_strides.append([1, 2, 3, 1])
 
+        self.twod_multiple_resnet.append(0)
+
         # Final 1d layer size (2 * 1 * 48)
         self.reshaped_1d_layer = (2 * 1 * 48)
-        ''' End of Your Layers '''
+        # End of Your Layers 
 
         self.num_conv2d_layers = len(self.filter_layers)
 
-        ''' Check validity '''
+        # Check validity      
         if self.reshape_input_layer[1] * self.reshape_input_layer[2] != input_arraysize:
             print("Error : Your reshaped values makes wrond result")
             raise ValueError
@@ -271,10 +280,14 @@ class Tensorflow_Machine:
         # 5. m_stride
         elif parse_item[0] == "m_stride":
             new_layer = list()
-            for i in range(1, len(parse_item)):
+
+            for i in range(1, len(parse_item) - 1):
                 new_layer.append(int(parse_item[i]))
 
             self.max_pool_strides.append(new_layer)
+
+            # 2d append
+            self.twod_multiple_resnet.append(float(parse_item[len(parse_item) - 1]))
 
             # After 5 is called, increase layersize 1
             self.num_conv2d_layers += 1
@@ -310,13 +323,17 @@ class Tensorflow_Machine:
 
         # 1. item
         if parse_item[0] == "item":
-            for i in range(1, len(parse_item)):
+            for i in range(1, len(parse_item) - 1):
                 self.one_dim_layer.append(int(parse_item[i]))
+            
+            for i in range(2, len(parse_item)):
+                self.oned_multiple_resnet.append(float(parse_item[i]))
 
         # 2. for
         elif parse_item[0] == "for":
             for layer in range(int(parse_item[1]), int(parse_item[2]), int(parse_item[3])):
                 self.one_dim_layer.append(layer)
+                self.oned_multiple_resnet.append(float(0))
 
         # Default
         else:
@@ -335,6 +352,8 @@ class Tensorflow_Machine:
         self.max_pool_ksizes = []
         self.max_pool_strides = []
 
+        self.twod_multiple_resnet = []
+
         self.padding_type = 'SAME'
         self.filter_stddev = 0.01
 
@@ -343,6 +362,8 @@ class Tensorflow_Machine:
         self.num_conv2d_layers = 0
 
         self.one_dim_layer = list()
+
+        self.oned_multiple_resnet = []
 
         self.one_dim_layer_size = 0
 
@@ -449,6 +470,14 @@ class Tensorflow_Machine:
 
         return
 
+    def _batch_normalize(self,
+                         inputs,
+                         data_format="Nothing") :
+        return tf.layers.batch_normalization(inputs=inputs, 
+                                            training=self.is_train,
+                                            axis=1 if data_format == "channels_first" else -1)
+
+
     # Create CNN(Conv2d + Max Pool)
     # 1. input_array = input items
     # (X). input_layersize_array =  [(batches == -1), Y, X, (num_channels)] => [Y, X, (num_channels)]
@@ -467,17 +496,25 @@ class Tensorflow_Machine:
                              layer_index,
                              padding_type='SAME',
                              dropout_ratio=1.0,
-                             input_dtype=tf.float64,
+                             input_dtype=tf.float32,
                              wlist=False,
                              final_reshape_to_1d=False,
-                             stddev=0.01):
+                             stddev=0.01,
+                             multiple_resnet=0.0):
         if self.print_created_layer is True:
             print("CNN", filter_layersize_array, filter_stride_array, max_pool_ksize,
-                  max_pool_stride_array, layer_index)
+                  max_pool_stride_array, layer_index, multiple_resnet)
+
+        
+        if self.batch_norm is True :
+            input_array = self._batch_normalize(input_array)
+
+        if multiple_resnet != 0.0 :
+            tmp_input_array = input_array
 
         W = tf.Variable(tf.random_normal(filter_layersize_array,
                                          stddev=stddev,
-                                         dtype=tf.float64,
+                                         dtype=tf.float32,
                                          name=('CNN_W' + str(layer_index))))
 
         L = tf.nn.conv2d(input_array, W, strides=filter_stride_array, padding=padding_type)
@@ -485,6 +522,9 @@ class Tensorflow_Machine:
 
         output_array = tf.nn.max_pool(L, ksize=max_pool_ksize, strides=max_pool_stride_array, padding=padding_type)
         output_array = tf.nn.dropout(output_array, keep_prob=dropout_ratio)
+
+        if multiple_resnet != 0.0 :
+            output_array = tmp_input_array * multiple_resnet 
 
         if wlist is not False:
             wlist.append(W)
@@ -508,10 +548,17 @@ class Tensorflow_Machine:
                          llist=False,
                          direct_bridge=False,
                          dropout_ratio=1.0,
-                         input_dtype=tf.float64):
+                         input_dtype=tf.float32,
+                         multiple_resnet=0.0):
 
         if self.print_created_layer is True:
-            print("1Dim", input_layersize_array, output_layersize_array, layer_index)
+            print("1Dim", input_layersize_array, output_layersize_array, layer_index, multiple_resnet)
+
+        if self.batch_norm is True :
+            input_array = self._batch_normalize(input_array)
+
+        if multiple_resnet != 0.0:
+            tmp_input_array = input_array
 
         ## Weight / Bias
         if (direct_bridge is False) or (layer_index != 0):
@@ -520,7 +567,7 @@ class Tensorflow_Machine:
             B = tf.Variable(tf.random_normal([output_layersize_array], dtype=input_dtype),
                             name=('B' + str(layer_index)))
         else:
-            W = tf.Variable(tf.convert_to_tensor(np.eye(input_layersize_array, dtype=np.float64)), name='W0')
+            W = tf.Variable(tf.convert_to_tensor(np.eye(input_layersize_array, dtype=np.float32)), name='W0')
 
         ## Layer Result
         if (direct_bridge is False) or (layer_index != 0):
@@ -533,15 +580,18 @@ class Tensorflow_Machine:
 
         if wlist is not False:
             wlist.append(W)
-        if (blist is not False) and ((direct_bridge is False) or (i != 0)):
+        if (blist is not False) and ((direct_bridge is False) or (layer_index != 0)):
             blist.append(B)
         if llist is not False:
             llist.append(output_array)
 
-        if direct_bridge is True:
-            return output_array, W
+        if multiple_resnet != 0 :
+            input_array = tmp_input_array * multiple_resnet
 
-        return output_array, W, B
+        if (direct_bridge is False) or (layer_index != 0) :
+            return output_array, W, B
+
+        return output_array, W
 
     def _summary_histogram(self,
                            total_layer,
@@ -595,7 +645,8 @@ class Tensorflow_Machine:
                                                              self.max_pool_strides[i], i,
                                                              dropout_ratio=self.dropout_ratio,
                                                              input_dtype=self.input_dtype,
-                                                             stddev=self.filter_stddev)
+                                                             stddev=self.filter_stddev,
+                                                             multiple_resnet=self.twod_multiple_resnet[i])
 
             # 2. last conv2d (change 2d * channel shape to 1d)
             if self.num_conv2d_layers is not 0:
@@ -608,7 +659,8 @@ class Tensorflow_Machine:
                                                                 dropout_ratio=self.dropout_ratio,
                                                                 input_dtype=self.input_dtype,
                                                                 stddev=self.filter_stddev,
-                                                                final_reshape_to_1d=True)
+                                                                final_reshape_to_1d=True,
+                                                                multiple_resnet=self.twod_multiple_resnet[self.num_conv2d_layers - 1])
 
             # 3. create 1d
             for i in range(0, self.one_dim_layer_size - 2):
@@ -618,13 +670,15 @@ class Tensorflow_Machine:
                                                          i,
                                                          self.wlist,
                                                          self.blist,
-                                                         self.llist)
+                                                         self.llist,
+                                                         multiple_resnet=self.oned_multiple_resnet[i])
 
             # 4. last 1d
             _, self.W, self.B = self._create_1d_layer(next_input,
                                                       self.one_dim_layer[self.one_dim_layer_size - 2],
                                                       self.one_dim_layer[self.one_dim_layer_size - 1],
-                                                      self.one_dim_layer_size - 2, self.wlist, self.blist)
+                                                      self.one_dim_layer_size - 2, self.wlist, self.blist,
+                                                      multiple_resnet=self.oned_multiple_resnet[self.one_dim_layer_size - 2])
 
             # 5. hypothesis
             # hypothesis [0.9 0.1 0.0 0.0 ...] // O.9 might be an answer
@@ -731,6 +785,8 @@ class Tensorflow_Machine:
                             epoch):
         avg_cost = 0
 
+        self.is_train = True
+
         # Each epoch trains amount of total batch (num_input_data / num_batches) 
         for i in range(0, self.total_batch):
             X_batch, Y_batch = self._get_next_batch()
@@ -772,6 +828,8 @@ class Tensorflow_Machine:
         if training_epochs < 1:
             training_epochs = self.training_epochs
 
+        self.is_train = True
+
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(sess=self.sess, coord=coord)
 
@@ -797,6 +855,8 @@ class Tensorflow_Machine:
         print_accuracy, predict_val, _ = self.sess.run([self.accuracy, self.hypothesis, self.Y],
                                                        feed_dict={self.X: self.Xtest, self.Y: self.Ytest,
                                                                   self.keep_prob: 1})
+
+        self.is_train = False
 
         ''' Print result (TBD) '''
         # Todo : Synchronize with output

@@ -26,4 +26,4 @@ snapshotmincostpath="/tmp/minmodel.ckpt"
 print_created_layer=False
 num_thread = 1
 direct_bridge = False
-input_padding_zero=13
+input_padding_zero=14
