@@ -16,11 +16,11 @@ CNN {
 	f_layer, [3, 3, 1, 20]
 	f_stride, [1, 1, 1, 1]
 	m_ksize, [1, 1, 1, 1]
-	m_stride, [1, 1, 1, 1]
+	m_stride, [1, 1, 1, 1] , 0
 	f_layer, [3, 3, 20, 48]
 	f_stride, [1, 1, 1, 1]
 	m_ksize, [1, 1, 1, 1]
-	m_stride, [1, 1, 1, 1]
+	m_stride, [1, 1, 1, 1] , 0
 	1d_size, 3120
 }
 
@@ -30,7 +30,7 @@ CNN {
 # for   : USAGE = for, A, B, C = { for layer in range(A, B, C) }
 DL
 {
-	item, 3120
-	for, 3120, 1, -567
-	item, 1
+	item, 3120 , 0
+	for, 3120, 1, -567 , 0
+	item, 1 , 0
 }

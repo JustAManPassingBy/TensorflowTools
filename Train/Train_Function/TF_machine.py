@@ -92,7 +92,7 @@ class Tensorflow_Machine:
         self.total_batch = int(self.dataset_size / self.batch_size)
 
         self.is_train = False
-        self.batch_norm = True
+        self.batch_norm = False
 
         return
 
@@ -502,8 +502,18 @@ class Tensorflow_Machine:
                              stddev=0.01,
                              multiple_resnet=0.0):
         if self.print_created_layer is True:
-            print("CNN", filter_layersize_array, filter_stride_array, max_pool_ksize,
-                  max_pool_stride_array, layer_index, multiple_resnet)
+            print("[CNN : ", 
+                  layer_index, 
+                  "] Filter_layer : ", 
+                  filter_layersize_array, 
+                  " Filter_stride : " ,
+                  filter_stride_array, 
+                  " maxpool_ksize : ", 
+                  max_pool_ksize, 
+                  " maxpool_stride : ", 
+                  max_pool_stride_array, 
+                  " Resnet? " ,
+                  multiple_resnet)
 
         
         if self.batch_norm is True :
@@ -552,7 +562,14 @@ class Tensorflow_Machine:
                          multiple_resnet=0.0):
 
         if self.print_created_layer is True:
-            print("1Dim", input_layersize_array, output_layersize_array, layer_index, multiple_resnet)
+            print("1Dim [", 
+                  layer_index, 
+                  "] layer", 
+                  input_layersize_array, 
+                  "->",
+                  output_layersize_array, 
+                  "resnet? ",
+                  multiple_resnet)
 
         if self.batch_norm is True :
             input_array = self._batch_normalize(input_array)
@@ -562,12 +579,16 @@ class Tensorflow_Machine:
 
         ## Weight / Bias
         if (direct_bridge is False) or (layer_index != 0):
-            W = tf.get_variable(('W' + str(layer_index)), shape=[input_layersize_array, output_layersize_array],
-                                initializer=tf.contrib.layers.xavier_initializer(), dtype=input_dtype)
-            B = tf.Variable(tf.random_normal([output_layersize_array], dtype=input_dtype),
-                            name=('B' + str(layer_index)))
+            W = tf.get_variable(('W' + str(layer_index)), 
+                                 shape=[input_layersize_array, output_layersize_array],
+                                 initializer=tf.contrib.layers.xavier_initializer(), 
+                                 dtype=input_dtype)
+            B = tf.Variable(tf.random_normal([output_layersize_array], 
+                                             dtype=input_dtype),
+                                             name=('B' + str(layer_index)))
         else:
-            W = tf.Variable(tf.convert_to_tensor(np.eye(input_layersize_array, dtype=np.float32)), name='W0')
+            W = tf.Variable(tf.convert_to_tensor(0.5 * (np.eye(input_layersize_array, dtype=np.float32))), name='W0')
+            B = tf.Variable(tf.convert_to_tensor(np.zeros(output_layersize_array, dtype=np.float32)), name='B0')
 
         ## Layer Result
         if (direct_bridge is False) or (layer_index != 0):
@@ -585,13 +606,13 @@ class Tensorflow_Machine:
         if llist is not False:
             llist.append(output_array)
 
-        if multiple_resnet != 0 :
+        if multiple_resnet != 0.0 :
             input_array = tmp_input_array * multiple_resnet
 
         if (direct_bridge is False) or (layer_index != 0) :
             return output_array, W, B
 
-        return output_array, W
+        return output_array, W, B
 
     def _summary_histogram(self,
                            total_layer,
@@ -671,6 +692,7 @@ class Tensorflow_Machine:
                                                          self.wlist,
                                                          self.blist,
                                                          self.llist,
+                                                         direct_bridge=self.direct_bridge,
                                                          multiple_resnet=self.oned_multiple_resnet[i])
 
             # 4. last 1d
@@ -678,6 +700,7 @@ class Tensorflow_Machine:
                                                       self.one_dim_layer[self.one_dim_layer_size - 2],
                                                       self.one_dim_layer[self.one_dim_layer_size - 1],
                                                       self.one_dim_layer_size - 2, self.wlist, self.blist,
+                                                      direct_bridge=self.direct_bridge,
                                                       multiple_resnet=self.oned_multiple_resnet[self.one_dim_layer_size - 2])
 
             # 5. hypothesis
@@ -693,13 +716,13 @@ class Tensorflow_Machine:
             # Square = {for all X in [X], init M = 0 , M += (WX - Y)^2 , finally M /= sizeof([X]) 
             # label is true difference
             # reduce mean is average of all matrix's elements
-            # cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=hypothesis, labels= Y))
-            # cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=hypothesis, labels=Y))
+            #self.cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.hypothesis, labels=self.Y))
+            #self.cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=self.hypothesis, labels=self.Y))
             self.cost = tf.reduce_mean(tf.square(self.hypothesis - self.Y))
 
             # 7. Record all informations to tensorboard
             self.whist, self.bhist, _ = self._summary_histogram(self.one_dim_layer_size, self.wlist, self.blist,
-                                                                self.llist)
+                                                                self.llist, self.direct_bridge)
             self.hyphist = tf.summary.histogram("hypothesis", self.hypothesis)
             tf.summary.scalar("cost", self.cost)
 
@@ -720,13 +743,13 @@ class Tensorflow_Machine:
             # optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.my_learning_rate).minimize(self.cost - self.l2reg)
 
             # 10. Accuracy
-            # Adjust correct prediction (set standards whether train result is same with expects)
+            # Max offset
             #self.correct_prediction = tf.equal(tf.argmax(self.hypothesis, 1), tf.argmax(self.Y, 1))
-            # correct_prediction = tf.equal(self.hypothesis, self.Y)
-            self.correct_prediction = tf.square(self.hypothesis -  self.Y)
-
-            # calculate Accuracy
+            #self.correct_prediction = tf.equal(self.hypothesis, self.Y)
             #self.accuracy = tf.reduce_mean(tf.cast(self.correct_prediction, self.input_dtype))
+
+            # Calculate differences
+            self.correct_prediction = tf.square(self.hypothesis -  self.Y)
             self.accuracy = tf.reduce_mean(self.correct_prediction)
 
         return
@@ -791,7 +814,10 @@ class Tensorflow_Machine:
         for i in range(0, self.total_batch):
             X_batch, Y_batch = self._get_next_batch()
 
-            feed_dict = {self.X: X_batch, self.Y: Y_batch, self.keep_prob: self.dropout_ratio}
+            feed_dict = {self.X: X_batch, 
+                         self.Y: Y_batch, 
+                         self.keep_prob: 
+                         self.dropout_ratio}
             c, merge_result, _ = self.sess.run([self.cost, self.merged, self.optimizer], feed_dict=feed_dict)
             avg_cost += c / self.total_batch
 
@@ -852,11 +878,15 @@ class Tensorflow_Machine:
         return min_cost
 
     def test_model(self):
-        print_accuracy, predict_val, _ = self.sess.run([self.accuracy, self.hypothesis, self.Y],
-                                                       feed_dict={self.X: self.Xtest, self.Y: self.Ytest,
+        self.is_train = False
+        print("is_train_data : " + str(self.is_train))
+
+        print_accuracy, predict_val, _ , cost = self.sess.run([self.accuracy, self.hypothesis, self.Y, self.cost],
+                                                       feed_dict={self.X: self.Xtest, 
+                                                                  self.Y: self.Ytest,
                                                                   self.keep_prob: 1})
 
-        self.is_train = False
+        print("cost : " + str(cost))
 
         ''' Print result (TBD) '''
         # Todo : Synchronize with output
@@ -864,12 +894,16 @@ class Tensorflow_Machine:
 
         # print("Min value : " + str(min_cost) + " (Save : " + str(snapshotmincost) + ")")
         print("Accuracy  : " + str(print_accuracy * 100.0) + "%")
-        # print_result(predict_val, self.Ytest, self.print_result_interval)
+        print_result(predict_val, self.Ytest, self.print_result_interval)
         # print_data(predict_val, "test.csv")
 
         if self.printalllayer is True:
-            print_all_layer_function(self.sess, self.printalllayer_file_name, self.wlist, self.blist,
-                                     self.one_dim_layer_size, self.direct_bridge)
+            print_all_layer_function(self.sess, 
+                                     self.printalllayer_file_name, 
+                                     self.wlist, 
+                                     self.blist,
+                                     self.one_dim_layer_size, 
+                                     self.direct_bridge)
 
         if self.showcost is True:
             print_cost(self.Xgraph, self.Ygraph, self.showcost_file_name)
@@ -888,10 +922,18 @@ class Tensorflow_Machine:
 
     # destroy
     def destory_all(self):
+        #tf.get_w_b()
+
         tf.reset_default_graph()
         self.sess.close()
 
         return
+
+# Get W / B Datas 
+    def get_w_b(self) :
+
+        return
+        
 
 ''' // Currently not use
 # Function Cost predictor

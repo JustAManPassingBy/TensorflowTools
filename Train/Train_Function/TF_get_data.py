@@ -317,9 +317,9 @@ def get_raw_data_from_tsv (X_arr,
                     else :
                         col_item = float(col)
 
-                    if (data_count == 1) :
-                        index_arr.append(col)
-                    else :
+                    #if (data_count == 1) :
+                    #    index_arr.append(col)
+                    #else :
                         row_items.append(col_item)
 
                 # pop last tab(Removed with improvement of file reads)

@@ -19,7 +19,7 @@ tm1 = Tensorflow_Machine(sess, "model_mnist",
                          layer_file="models_layers/model_mnist.txt",
                          mnist=mnist)
 
-tm1.training_model(training_epochs=500)
+tm1.training_model(training_epochs=1000)
 
 tm1.test_model()
 

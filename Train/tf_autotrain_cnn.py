@@ -74,7 +74,7 @@ for i in range(2, 3):
     if (i % 3 == 0):
         training_count = 5000
     else :
-        training_count = 1500
+        training_count = -1
 
     sess = tf.InteractiveSession()
 
@@ -91,9 +91,11 @@ for i in range(2, 3):
 num_result = 9
 y_size = 1
 
+'''
 cpm = CP_Machine(answer,
                  results,
                  y_size,
                  num_result)
 
 cpm.report()
+'''
